@@ -1,777 +1,2315 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GPSG Companion App</title>
-<link rel="stylesheet" href="gpsg-companion.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { 
+    font-family: Arial, sans-serif; 
+    padding: 20px; 
+    background: #1a1a1a; 
+    color: #e0e0e0;
+  }
+  .container { max-width: 1200px; margin: 0 auto; background: #2a2a2a; padding: 20px; border-radius: 8px; }
+  h1 { margin-bottom: 20px; color: #4a9eff; }
+  h2 { margin: 20px 0 10px; color: #60b0ff; border-bottom: 2px solid #444; padding-bottom: 5px; }
+  h3 { margin: 15px 0 10px; color: #80c0ff; }
+  h4 { margin: 10px 0; color: #a0d0ff; }
+  
+  .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #444; }
+  .tab-btn { 
+    padding: 10px 20px; 
+    background: none; 
+    border: none; 
+    cursor: pointer; 
+    border-bottom: 3px solid transparent;
+    color: #a0a0a0;
+    transition: all 0.2s;
+  }
+  .tab-btn:hover { color: #4a9eff; }
+  .tab-btn.active { border-bottom-color: #4a9eff; color: #4a9eff; font-weight: bold; }
+  
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  
+  .attr-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+    gap: 15px; 
+    margin: 20px 0; 
+  }
+  .attr-card { 
+    border: 1px solid #444; 
+    padding: 15px; 
+    background: #333; 
+    border-radius: 4px;
+  }
+  .attr-card h4 { margin-bottom: 10px; color: #60b0ff; }
+  .attr-controls { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .attr-controls button { padding: 5px 15px; cursor: pointer; }
+  .attr-value { 
+    font-size: 24px; 
+    font-weight: bold; 
+    min-width: 40px; 
+    text-align: center; 
+    color: #4a9eff;
+  }
+  
+  input[type="text"], input[type="number"], select, textarea { 
+    width: 100%; 
+    padding: 8px; 
+    margin: 5px 0; 
+    border: 1px solid #444; 
+    background: #1a1a1a;
+    color: #e0e0e0;
+    border-radius: 4px;
+  }
+  
+  button { 
+    padding: 8px 16px; 
+    margin: 5px; 
+    cursor: pointer; 
+    background: #4a9eff; 
+    color: white; 
+    border: none; 
+    border-radius: 4px;
+    transition: background 0.2s;
+  }
+  button:hover { background: #3a8eef; }
+  button.secondary { background: #666; }
+  button.secondary:hover { background: #777; }
+  button.danger { background: #d44; }
+  button.danger:hover { background: #e55; }
+  button:disabled { background: #555; cursor: not-allowed; opacity: 0.5; }
+  
+  .info-box { 
+    background: #2a4a6a; 
+    border: 1px solid #4a9eff; 
+    padding: 15px; 
+    margin: 10px 0; 
+    border-radius: 4px;
+    line-height: 1.6;
+  }
+  .info-box strong { color: #4a9eff; }
+  
+  .stats-display { display: flex; gap: 20px; margin: 15px 0; flex-wrap: wrap; }
+  .stat-item { 
+    padding: 10px 15px; 
+    background: #333; 
+    border-left: 4px solid #4a9eff; 
+    border-radius: 4px;
+  }
+  .stat-item strong { color: #60b0ff; }
+  
+  .dice-history, .skill-list { 
+    max-height: 300px; 
+    overflow-y: auto; 
+    border: 1px solid #444; 
+    padding: 10px; 
+    margin: 10px 0; 
+    background: #1a1a1a;
+    border-radius: 4px;
+  }
+  
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+  th, td { padding: 8px; text-align: left; border-bottom: 1px solid #444; }
+  th { background: #333; font-weight: bold; color: #60b0ff; }
+  tr:hover { background: #2a2a2a; }
+  
+  .error { color: #ff6b6b; padding: 10px; background: #3a1a1a; margin: 10px 0; border-radius: 4px; border: 1px solid #ff6b6b; }
+  .success { color: #51cf66; padding: 10px; background: #1a3a1a; margin: 10px 0; border-radius: 4px; border: 1px solid #51cf66; }
+  .warning { color: #ffa94d; padding: 10px; background: #3a2a1a; margin: 10px 0; border-radius: 4px; border: 1px solid #ffa94d; }
+  
+  .stage-indicator { 
+    display: flex; 
+    justify-content: center; 
+    gap: 20px; 
+    margin: 20px 0;
+    padding: 15px;
+    background: #333;
+    border-radius: 4px;
+  }
+  .stage-item { 
+    padding: 10px 20px; 
+    border: 2px solid #444; 
+    border-radius: 4px;
+    background: #2a2a2a;
+  }
+  .stage-item.active { 
+    border-color: #4a9eff; 
+    background: #2a4a6a;
+    color: #4a9eff;
+    font-weight: bold;
+  }
+  .stage-item.completed { 
+    border-color: #51cf66; 
+    background: #1a3a1a;
+    color: #51cf66;
+  }
+  
+  .skill-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+    gap: 10px; 
+    margin: 15px 0; 
+  }
+  .skill-card { 
+    padding: 10px; 
+    border: 1px solid #444; 
+    background: #333;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .skill-card:hover { background: #3a3a3a; }
+  
+  .talent-list { margin: 15px 0; }
+  .talent-item { 
+    padding: 10px; 
+    margin: 5px 0; 
+    border: 1px solid #444; 
+    background: #333;
+    border-radius: 4px;
+  }
+  
+  .char-list { margin: 15px 0; }
+  .char-item { 
+    padding: 15px; 
+    margin: 10px 0; 
+    border: 1px solid #444; 
+    background: #333;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .char-item:hover { background: #3a3a3a; }
+  
+  label { display: block; margin-top: 10px; margin-bottom: 5px; color: #a0a0a0; font-size: 14px; }
+  
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: #1a1a1a; }
+  ::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #666; }
+  
+  /* Custom Modal/Alert Styles */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+  }
+  .modal-overlay.active { display: flex; }
+  
+  .modal-box {
+    background: #2a2a2a;
+    border: 2px solid #4a9eff;
+    border-radius: 8px;
+    padding: 25px;
+    min-width: 300px;
+    max-width: 500px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    animation: modalSlideIn 0.2s ease-out;
+  }
+  
+  @keyframes modalSlideIn {
+    from {
+      transform: translateY(-50px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  .modal-message {
+    color: #e0e0e0;
+    font-size: 16px;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+  
+  .modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+  
+  .modal-buttons button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+  }
+  
+  .modal-btn-ok {
+    background: #4a9eff;
+    color: white;
+  }
+  .modal-btn-ok:hover { background: #3a8eef; }
+  
+  .modal-btn-cancel {
+    background: #666;
+    color: white;
+  }
+  .modal-btn-cancel:hover { background: #777; }
+  
+  /* Sticky Section Headers */
+  .sticky-section {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #2a4a6a;
+    border: 1px solid #4a9eff;
+    padding: 15px 20px;
+    margin: 20px 0 10px 0;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+  
+  .sticky-section h3 {
+    margin: 0;
+    color: #4a9eff;
+    display: inline-block;
+  }
+  
+  .sticky-section .section-stats {
+    float: right;
+    color: #a0d0ff;
+  }
+  
+  .section-content {
+    margin-bottom: 40px;
+    min-height: 200px;
+  }
+  
+  .skill-item, .language-item {
+    background: #333;
+    border: 1px solid #444;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .skill-item.traded {
+    opacity: 0.5;
+    background: #2a2a2a;
+  }
+  
+  .skill-item input[type="text"] {
+    width: 200px;
+    margin: 0;
+  }
+  
+  .rank-buttons {
+    display: flex;
+    gap: 5px;
+  }
+  
+  .rank-buttons button {
+    padding: 5px 10px;
+    margin: 0;
+    min-width: 60px;
+  }
+  
+  .rank-buttons button.active {
+    background: #51cf66;
+  }
+  
+  .rank-buttons button.active:hover {
+    background: #40bf56;
+  }
+  
+  .btn-trash {
+    background: #d44;
+    padding: 5px 10px;
+    margin: 0;
+  }
+  
+  .btn-trash:hover {
+    background: #e55;
+  }
+  
+  .btn-add-skill {
+    margin: 10px 0;
+  }
+  
+  /* Collapsible Sections */
+  .collapsible-header {
+    cursor: pointer;
+    padding: 10px;
+    background: #333;
+    border: 1px solid #444;
+    border-radius: 4px;
+    margin: 10px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+  }
+  
+  .collapsible-header:hover {
+    background: #3a3a3a;
+  }
+  
+  .collapsible-header .arrow {
+    transition: transform 0.2s;
+  }
+  
+  .collapsible-header.collapsed .arrow {
+    transform: rotate(-90deg);
+  }
+  
+  .collapsible-content {
+    max-height: 400px;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+  
+  .collapsible-content.collapsed {
+    max-height: 0;
+  }
+</style>
 </head>
 <body>
-<header>
-  <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 24 24'><rect fill='%2307162a' width='24' height='24' rx='6'/><text x='12' y='16' font-size='10' font-family='Arial' text-anchor='middle' fill='%237dd3fc'>GPSG</text></svg>" alt="" style="border-radius:8px"/>
-  <div>
-    <h1>GPSG Companion App</h1>
-    <div class="small muted">Hosted single-file app — localStorage cache — dice, character, combat</div>
+
+<!-- Custom Modal/Alert -->
+<div id="customModal" class="modal-overlay">
+  <div class="modal-box">
+    <div id="modalMessage" class="modal-message"></div>
+    <div id="modalButtons" class="modal-buttons"></div>
   </div>
-</header>
+</div>
 
 <div class="container">
-  <nav>
-    <button id="tab-dice" class="active">Dice Roller</button>
-    <button id="tab-char">Character Sheet</button>
-    <button id="tab-combat">Combat Simulator</button>
-    <button id="tab-percentile">Percentile Tests</button>
-    <hr style="border:none;border-top:1px solid rgba(255,255,255,0.03);margin:8px 0">
-    <div class="small muted">Storage</div>
-    <div style="margin-top:8px">
-      <button id="saveBtn" class="ghost">Save Now</button>
-      <button id="loadBtn" class="ghost">Load</button>
-      <button id="exportBtn" class="ghost">Export JSON</button>
-      <button id="importBtn" class="ghost">Import JSON</button>
+  <h1>🎲 GPSG Companion App</h1>
+  
+  <div class="tabs">
+    <button class="tab-btn" onclick="switchTab('dice')">Dice Roller</button>
+    <button class="tab-btn active" onclick="switchTab('characters')">Character Sheets</button>
+  </div>
+
+  <!-- DICE ROLLER TAB -->
+  <div id="dice" class="tab-content">
+    <h2>Dice Roller</h2>
+    <div>
+      <label>Dice Expression (e.g., 1d100, 3d6+2):</label>
+      <input type="text" id="diceExpr" value="1d100" placeholder="1d100">
     </div>
-    <div style="margin-top:12px" class="muted small">Auto-save: on</div>
-  </nav>
+    <div>
+      <label>Number of Rolls:</label>
+      <input type="number" id="diceCount" value="1" min="1">
+    </div>
+    <button onclick="rollDice()">Roll Dice</button>
+    <button class="secondary" onclick="clearDiceHistory()">Clear History</button>
+    <div id="diceResult"></div>
+    <div class="dice-history" id="diceHistory"></div>
+  </div>
 
-  <main>
-    <!-- DICE -->
-    <section id="panel-dice" class="card">
-      <h3>Dice Roller</h3>
-      <div class="small muted">Enter dice in XdY form (e.g. 1d100, 3d6+2). Modifier +/- optional.</div>
-      <div style="margin-top:8px" class="row">
-        <div class="col">
-          <label>Dice expression</label>
-          <input id="diceExpr" type="text" placeholder="e.g. 1d100, 3d6+2, 2d10-1" value="1d100" />
-        </div>
-        <div style="width:140px">
-          <label>Rolls</label>
-          <input id="diceCount" type="number" min="1" value="1" />
-        </div>
+  <!-- CHARACTER SHEETS TAB -->
+  <div id="characters" class="tab-content active">
+    <h2>Character Sheets</h2>
+    <button onclick="showCharacterList()">📋 View All Characters</button>
+    <button onclick="startCharacterCreation()">➕ Create New Character</button>
+    <button class="secondary" onclick="exportAllCharacters()">💾 Export All</button>
+    <button class="secondary" onclick="importCharacters()">📂 Import</button>
+    
+    <div id="characterListView" style="display:none;">
+      <h3>Your Characters</h3>
+      <div class="char-list" id="charList"></div>
+    </div>
+    
+    <div id="characterSheetView" style="display:none;">
+      <button class="secondary" onclick="showCharacterList()">← Back to List</button>
+      <div id="sheetContent"></div>
+    </div>
+    
+    <div id="characterCreationView" style="display:none;">
+      <button class="danger" onclick="cancelCharacterCreation()">✖ Cancel Creation</button>
+      
+      <div class="stage-indicator">
+        <div class="stage-item" id="stage1Indicator">Stage 1: Attributes</div>
+        <div class="stage-item" id="stage2Indicator">Stage 2: Free Skills</div>
+        <div class="stage-item" id="stage3Indicator">Stage 3: XP Spending</div>
       </div>
-      <div class="controls">
-        <button id="rollBtn" class="primary">Roll</button>
-        <button id="clearDiceHistory" class="ghost">Clear History</button>
-      </div>
-      <div id="diceResult" style="margin-top:8px"></div>
-      <div class="dice-history" id="diceHistory"></div>
-      <div class="footer">Dice engine: integer dice, random using crypto when available.</div>
-    </section>
-
-    <!-- CHARACTER -->
-    <section id="panel-char" style="display:none" class="card">
-      <h3>Character Creation & Sheet</h3>
-      <div class="small muted">Follow rules: base 25 in each attribute; distribute 40 points; can reduce up to 4 attributes to 20; no attribute above 40 pre-XP; starting XP 2000. Skills/talents costs available in XP tab.</div>
-
-      <div style="margin-top:10px" class="columns">
-        <div>
-          <div class="card">
-            <h4>Attributes</h4>
-            <div class="small muted">Base: 25 each. Extra 40 points to distribute. Optionally reduce up to 4 attributes to 20 to re-distribute their points. No attribute &gt; 40 before spending XP.</div>
-            <div style="margin-top:8px" class="attr-grid" id="attrsGrid"></div>
-            <div style="margin-top:8px" class="flex">
-              <div class="chip">Points to distribute: <span id="pointsLeft">40</span></div>
-              <div class="chip">Reductions used: <span id="reductionsUsed">0</span>/4</div>
-              <div class="chip">Starting XP: <span id="xpDisplay">2000</span></div>
-            </div>
-            <div style="margin-top:8px" class="controls">
-              <button id="resetAttrs" class="ghost">Reset Attributes</button>
-            </div>
-          </div>
-
-          <div class="card" style="margin-top:10px">
-            <h4>Languages & Starting Talent</h4>
-            <div class="small muted">Languages = IntBonus - 1. Each language is a "Language" talent with rank 4. You may trade a language for any skill at rank 2 but must keep at least 1 language.</div>
-            <div class="row" style="margin-top:8px">
-              <div class="col">
-                <label>Auto languages (computed)</label>
-                <div id="autoLanguages" class="list"></div>
-              </div>
-            </div>
-            <div style="margin-top:8px" class="small muted">Trade language for skill:</div>
-            <div class="row" style="margin-top:8px">
-              <div class="col">
-                <label>Choose language to trade</label>
-                <select id="tradeLangSelect"></select>
-              </div>
-              <div class="col">
-                <label>Choose skill to receive at rank 2</label>
-                <select id="tradeSkillSelect"></select>
-              </div>
-            </div>
-            <div class="controls" style="margin-top:8px">
-              <button id="tradeLanguageBtn" class="ghost">Trade Language → Skill²</button>
-            </div>
-          </div>
-
-          <div class="card" style="margin-top:10px">
-            <h4>Skills Allocation (starting)</h4>
-            <div class="small muted">Pick: any 6 skills at rank 0, any 4 skills at rank 2, any 2 skills at rank 4. Also any 2 Knowledge skills at rank 0. Skills cost XP later.</div>
-            <div style="margin-top:8px" class="small muted">Click entries to toggle selection or change rank in the list below.</div>
-            <div style="margin-top:8px" id="skillsList" class="list"></div>
-            <div class="controls">
-              <button id="autoAssignSkills" class="ghost">Auto assign sample</button>
-              <button id="clearSkills" class="ghost">Clear selections</button>
-            </div>
-          </div>
+      
+      <!-- STAGE 1: ATTRIBUTES -->
+      <div id="creationStage1" style="display:none;">
+        <h2>Stage 1: Attribute Assignment</h2>
+        
+        <div class="info-box">
+          <strong>📖 Character Creation Tips:</strong><br>
+          • Start with 25 in each attribute and 40 points to distribute<br>
+          • You can lower up to 4 attributes below 25 to gain extra points<br>
+          • Attributes cannot exceed 40 during initial creation<br>
+          • <strong>Attribute Bonus = Tens Digit</strong> (e.g., 30 = +3, 39 = +3, 40 = +4)<br>
+          • <strong>Skill Bonus = 5 × Skill Rank</strong> (e.g., Rank 3 = +15)<br>
+          • Higher attributes in Agility, Strength, and Endurance improve combat effectiveness<br>
+          • Intelligence affects your starting languages<br>
+          • Willpower is crucial for resisting mental effects
         </div>
 
         <div>
-          <div class="card">
-            <h4>Character Info & XP</h4>
-            <label>Character name</label>
-            <input id="charName" type="text" placeholder="Name your character" />
-            <div style="margin-top:8px" class="small muted">XP: Starting 2000. Use buttons below to buy attribute points, skill ranks or talents. Costs shown in tooltips.</div>
+          <label>Character Name:</label>
+          <input type="text" id="creationCharName" placeholder="Enter character name">
+        </div>
 
-            <div style="margin-top:8px" class="row">
-              <div class="col">
-                <label>Current XP</label>
-                <input id="xpValue" type="number" value="2000" />
-              </div>
-              <div class="col">
-                <label>Unspent XP (computed)</label>
-                <div class="chip" id="xpUnspent">2000</div>
-              </div>
-            </div>
-            <div style="margin-top:8px" class="controls">
-              <button id="buyAttrBtn" class="primary">Buy Attr Point</button>
-              <button id="buySkillBtn" class="primary">Buy Skill Rank</button>
-              <button id="buyTalentBtn" class="primary">Buy Talent</button>
-            </div>
-            <div style="margin-top:8px">
-              <label>Marketplace / Purchases</label>
-              <div id="purchaseLog" class="list"></div>
-            </div>
-          </div>
+        <div class="stats-display">
+          <div class="stat-item"><strong>Points to Distribute:</strong> <span id="creationPointsLeft">40</span></div>
+          <div class="stat-item"><strong>Attributes Below 25:</strong> <span id="creationReductionsUsed">0</span>/4</div>
+        </div>
 
-          <div class="card" style="margin-top:10px">
-            <h4>Derived Stats</h4>
-            <div class="small muted">Bonuses formula: <code>Bonus = floor((Attribute - 10) / 5)</code>. That's used for AgiBonus, StrBonus, WilBonus, EndBonus, PerBonus, IntBonus etc.</div>
-            <table id="derivedTable" style="margin-top:8px">
-              <thead><tr><th>Stat</th><th>Value</th><th>Bonus</th></tr></thead>
-              <tbody></tbody>
-            </table>
-          </div>
+        <h3>Attributes</h3>
+        <div class="attr-grid" id="creationAttrsGrid"></div>
 
-          <div class="card" style="margin-top:10px">
-            <h4>Storage & JSON</h4>
-            <div class="small muted">You can export/import the character JSON below.</div>
-            <textarea id="exportArea" placeholder="Saved character JSON appears here..."></textarea>
-            <div class="controls" style="margin-top:8px">
-              <button id="exportCharBtn" class="ghost">Export Char JSON</button>
-              <button id="importCharBtn" class="ghost">Import JSON into app</button>
-            </div>
-          </div>
+        <div class="controls">
+          <button onclick="confirmAttributesStage()">Next: Free Skills →</button>
         </div>
       </div>
-    </section>
 
-    <!-- COMBAT -->
-    <section id="panel-combat" style="display:none" class="card">
-      <h3>Combat Simulator</h3>
-      <div class="small muted">Simulate an attack: roll attack d100, resolve hit location (ones digit), apply damage, compute reductions and special head effect.</div>
-
-      <div class="row" style="margin-top:8px">
-        <div class="col">
-          <label>Attacker</label>
-          <select id="attackerSelect"></select>
+      <!-- STAGE 2: FREE SKILLS & LANGUAGES -->
+      <div id="creationStage2" style="display:none;">
+        <h2>Stage 2: Free Skills & Languages</h2>
+        
+        <div class="info-box">
+          <strong>📖 Free Skills Guide:</strong><br>
+          • Select any 6 skills at rank 0<br>
+          • Select any 4 skills at rank 2<br>
+          • Select any 2 skills at rank 4<br>
+          • Select any 2 Knowledge skills at rank 0<br>
+          • Languages are based on your Intelligence bonus - 1<br>
+          • You can trade languages for skills at rank 2 (must keep at least 1)<br>
         </div>
-        <div style="width:180px">
-          <label>Weapon type</label>
-          <select id="weaponType">
-            <option value="melee">Melee</option>
-            <option value="ranged">Ranged</option>
-            <option value="area">Explosive / Area</option>
+
+        <!-- STARTING SKILLS SECTION -->
+        <div class="sticky-section">
+          <h3>Starting Skills (Free)</h3>
+          <span class="section-stats">
+            Rank 0: <span id="freeRank0Used">0</span>/6 | 
+            Rank 2: <span id="freeRank2Used">0</span>/4 | 
+            Rank 4: <span id="freeRank4Used">0</span>/2
+          </span>
+        </div>
+        <div class="section-content">
+          <button class="btn-add-skill" onclick="addFreeSkill()">+ Add Skill</button>
+          <div id="freeSkillsList"></div>
+        </div>
+
+        <!-- KNOWLEDGE SKILLS SECTION -->
+        <div class="sticky-section">
+          <h3>Knowledge Skills (Free)</h3>
+          <span class="section-stats">
+            Knowledge Rank 0: <span id="freeKnowledgeUsed">0</span>/2
+          </span>
+        </div>
+        <div class="section-content">
+          <button class="btn-add-skill" onclick="addKnowledgeSkill()">+ Add Knowledge Skill</button>
+          <div id="knowledgeSkillsList"></div>
+        </div>
+
+        <!-- LANGUAGES SECTION -->
+        <div class="sticky-section">
+          <h3>Languages</h3>
+          <span class="section-stats">
+            Available: <span id="languageCount">0</span>
+          </span>
+        </div>
+        <div class="section-content">
+          <div id="languagesList"></div>
+        </div>
+
+        <div class="controls">
+          <button class="secondary" onclick="goToStage(1)">← Back: Attributes</button>
+          <button onclick="confirmFreeSkillsStage()">Next: XP Spending →</button>
+        </div>
+      </div>
+
+      <!-- STAGE 3: XP SPENDING -->
+      <div id="creationStage3" style="display:none;">
+        <h2>Stage 3: XP Spending</h2>
+        
+        <div class="info-box">
+          <strong>📖 XP Spending Guide:</strong><br>
+          <strong>Starting XP: 2000</strong><br><br>
+          <strong>Bonuses:</strong><br>
+          • <strong>Attribute Bonus = Tens Digit</strong> (e.g., 30 = +3, 39 = +3, 40 = +4)<br>
+          • <strong>Skill Bonus = 5 × Rank</strong> (e.g., Rank 3 = +15)<br><br>
+          <strong>XP Costs:</strong><br>
+          • <strong>Attributes:</strong> 100 XP per point (up to 40), then 200 XP per point (41-50)<br>
+          • <strong>Skills:</strong> 100 XP for rank 0, then 50 × (rank being bought) for each subsequent rank<br>
+          &nbsp;&nbsp;(You must have the previous rank to buy the next)<br>
+          • <strong>Talents:</strong> Tier 1 = 200 XP, Tier 2 = 400 XP, Tier 3 = 600 XP
+        </div>
+
+        <!-- STICKY XP HEADER -->
+        <div class="sticky-section">
+          <h3>XP Available</h3>
+          <span class="section-stats">
+            <span id="creationRemainingXP2">2000</span> / <span id="creationTotalXP2">2000</span> XP Remaining
+          </span>
+        </div>
+
+        <!-- ATTRIBUTES SECTION -->
+        <div class="section-content">
+          <h3>Attributes</h3>
+          <div class="attr-grid" id="xpAttrsGrid"></div>
+        </div>
+
+        <!-- SKILLS SECTION -->
+        <div class="section-content">
+          <h3>Skills</h3>
+          <button class="btn-add-skill" onclick="addXPSkill()">➕ Add Skill (100 XP for Rank 0)</button>
+          <div id="xpSkillsList"></div>
+        </div>
+
+        <h3>Buy Talents with XP</h3>
+        <div>
+          <label>Talent Name:</label>
+          <input type="text" id="talentName" placeholder="Enter talent name">
+        </div>
+        <div>
+          <label>Talent Tier:</label>
+          <select id="talentTier">
+            <option value="1">Tier 1 (200 XP)</option>
+            <option value="2">Tier 2 (400 XP)</option>
+            <option value="3">Tier 3 (600 XP)</option>
           </select>
         </div>
-        <div style="width:120px">
-          <label>Damage</label>
-          <input id="baseDamage" type="number" value="10" />
+        <button onclick="buyTalent()">Buy Talent</button>
+        
+        <h4>Purchased Talents</h4>
+        <div class="talent-list" id="talentsList"></div>
+
+        <h3>Purchase Log</h3>
+        <div class="dice-history" id="purchaseLog"></div>
+
+        <div class="controls">
+          <button class="secondary" onclick="goToStage(2)" id="backToStage2Btn">← Back: Free Skills</button>
+          <button onclick="finishCharacterCreation()" id="finishCreationBtn">🎉 Finish Character Creation</button>
         </div>
       </div>
-
-      <div style="margin-top:8px" class="controls">
-        <button id="attackRollBtn" class="primary">Roll Attack (1d100)</button>
-        <button id="manualHitBtn" class="ghost">Apply Manual Hit</button>
-      </div>
-
-      <div style="margin-top:8px" id="combatLog" class="list"></div>
-
-      <div style="margin-top:10px">
-        <h4>Target body parts health</h4>
-        <div id="bodyParts" class="list"></div>
-      </div>
-      <div class="footer">Head extra: if damage after bonuses > EndBonus, add extra 1d10 to head damage. Damage reduction: floor(EndBonus / 2)</div>
-    </section>
-
-    <!-- PERCENTILE TESTS -->
-    <section id="panel-percentile" style="display:none" class="card">
-      <h3>Percentile Tests</h3>
-      <div class="small muted">Roll two d10s to simulate percentile rolls. Enter a Target Number (TN) to calculate success.</div>
-
-      <div style="margin-top:8px" class="row">
-        <div class="col">
-          <label>Target Number (TN)</label>
-          <input id="percentileTN" type="number" placeholder="Enter TN (e.g., 50)" />
-        </div>
-        <div class="col">
-          <label>Modifier</label>
-          <input id="percentileMod" type="number" placeholder="Enter modifier (e.g., +10)" value="0" />
-        </div>
-      </div>
-
-      <div class="controls" style="margin-top:8px">
-        <button id="rollPercentileBtn" class="primary">Roll Percentile</button>
-        <button id="clearPercentileHistory" class="ghost">Clear History</button>
-      </div>
-
-      <div id="percentileResult" style="margin-top:8px"></div>
-      <div class="list" id="percentileHistory"></div>
-    </section>
-
-  </main>
+    </div>
+  </div>
 </div>
 
 <script>
-(function(){
-  // --------------------------
-  // Utilities
-  // --------------------------
-  const $ = (sel, root=document) => root.querySelector(sel);
-  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
-  const randInt = (min,max) => Math.floor(Math.random()*(max-min+1))+min;
-  function cryptoRandInt(min,max){
-    // Use crypto if available for better randomness
-    if(window.crypto && crypto.getRandomValues){
-      const range = max-min+1;
-      const maxRange = 4294967296;
-      const u32 = new Uint32Array(1);
-      let x;
-      do{
-        crypto.getRandomValues(u32);
-        x = u32[0];
-      } while(x >= Math.floor(maxRange / range) * range);
-      return min + (x % range);
-    }
-    return randInt(min,max);
-  }
-
-  function rollDie(sides){
-    return cryptoRandInt(1, sides);
-  }
-
-  // Bonus formula: floor((attr - 10)/5)
-  function bonusFor(attr){
-    return Math.floor((attr - 10) / 5);
-  }
-
-  // --------------------------
-  // App state and constants
-  // --------------------------
-  const STORAGE_KEY = 'gpsg_companion_v1';
-  let state = {
-    character: null,
-    diceHistory: [],
-    purchaseLog: []
-  };
-
-  // Predefined skill lists (examples)
-  const SKILLS = [
-    'Athletics','Stealth','Handgun','Rifle','Melee','Repair','First Aid','Persuasion','Intimidation','Trade','Pilot','Survival',
-    // knowledge
-    'Knowledge:History','Knowledge:Science','Knowledge:Arcana','Knowledge:Politics','Knowledge:Languages'
-  ];
-  const KNOWLEDGE = SKILLS.filter(s=>s.startsWith('Knowledge:'));
-  const ALL_SKILLS = SKILLS.slice();
-
-  // --------------------------
-  // Default new character
-  // --------------------------
-  function newCharacter(){
-    const base = 25;
-    const attrs = {
-      Agility: base, Charisma: base, Endurance: base, Intelligence: base,
-      Perception: base, 'Plot Importance': base, Strength: base, Willpower: base
+// ==================== CUSTOM ALERT/CONFIRM ====================
+function showAlert(message) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('customModal');
+    const messageEl = document.getElementById('modalMessage');
+    const buttonsEl = document.getElementById('modalButtons');
+    
+    messageEl.textContent = message;
+    buttonsEl.innerHTML = '<button class="modal-btn-ok" id="modalOkBtn">OK</button>';
+    
+    modal.classList.add('active');
+    
+    const okBtn = document.getElementById('modalOkBtn');
+    const closeModal = () => {
+      modal.classList.remove('active');
+      resolve();
     };
-    const skills = {};
-    ALL_SKILLS.forEach(s=> skills[s] = 0);
-    const languages = []; // auto computed
-    return {
-      name: 'New Character',
-      attrs,
-      skills,
-      languages,
-      // starting allocation aid
-      pointsToDistribute: 40,
-      reductionsUsed: 0,
-      reductions: {}, // track attributes reduced to 20
-      xpTotal: 2000,
-      xpSpent: 0,
-      talents: [], // {name, tier}
-      purchaseLog: []
+    
+    okBtn.onclick = closeModal;
+    modal.onclick = (e) => {
+      if (e.target === modal) closeModal();
     };
-  }
-
-  // --------------------------
-  // Persistence
-  // --------------------------
-  function saveState(){
-    try{
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      // show tiny flash
-      console.log('Saved state');
-    }catch(e){
-      console.error('Save failed', e);
-    }
-  }
-  function loadState(){
-    try{
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if(raw){
-        state = JSON.parse(raw);
-      } else {
-        state.character = newCharacter();
-      }
-    }catch(e){
-      console.error('Load failed', e);
-      state.character = newCharacter();
-    }
-  }
-
-  // Initialize
-  loadState();
-
-  // --------------------------
-  // DOM wiring & helpers
-  // --------------------------
-  const tabs = {
-    dice: $('#tab-dice'),
-    char: $('#tab-char'),
-    combat: $('#tab-combat'),
-    percentile: $('#tab-percentile')
-  };
-  const panels = {
-    dice: $('#panel-dice'),
-    char: $('#panel-char'),
-    combat: $('#panel-combat'),
-    percentile: $('#panel-percentile')
-  };
-  function switchTab(tab){
-    Object.values(tabs).forEach(b=> b.classList.remove('active'));
-    Object.values(panels).forEach(p=> p.style.display='none');
-    tabs[tab].classList.add('active');
-    panels[tab].style.display='block';
-  }
-  tabs.dice.addEventListener('click', ()=> switchTab('dice'));
-  tabs.char.addEventListener('click', ()=> switchTab('char'));
-  tabs.combat.addEventListener('click', ()=> switchTab('combat'));
-  tabs.percentile.addEventListener('click', ()=> switchTab('percentile'));
-
-  // Dice UI
-  const diceExpr = $('#diceExpr');
-  const diceCount = $('#diceCount');
-  const rollBtn = $('#rollBtn');
-  const diceResult = $('#diceResult');
-  const diceHistory = $('#diceHistory');
-  const clearDiceHistory = $('#clearDiceHistory');
-
-  function renderDiceHistory(){
-    diceHistory.innerHTML = '';
-    state.diceHistory.slice().reverse().forEach(e=>{
-      const d = document.createElement('div');
-      d.innerHTML = `<div style="display:flex;justify-content:space-between"><div><strong>${e.expr}</strong> → ${e.rolls.join(', ')} (total ${e.total})</div><div class="muted">${new Date(e.when).toLocaleString()}</div></div>`;
-      d.style.padding='6px 0';
-      diceHistory.appendChild(d);
-    });
-  }
-
-  function parseDiceExpression(expr){
-    // supports forms like "3d6+2" or "1d100-5"
-    expr = expr.replace(/\s+/g,'');
-    const m = expr.match(/^(\d+)d(\d+)([+-]\d+)?$/i);
-    if(!m) return null;
-    return {count: parseInt(m[1],10), sides: parseInt(m[2],10), mod: m[3] ? parseInt(m[3],10) : 0};
-  }
-
-  function rollExpression(expr){
-    const parsed = parseDiceExpression(expr);
-    if(!parsed) throw new Error('Invalid dice expression');
-    const {count,sides,mod} = parsed;
-    const rolls = [];
-    let total = 0;
-    for(let i=0;i<count;i++){
-      const r = rollDie(sides);
-      rolls.push(r);
-      total += r;
-    }
-    total += mod;
-    return {rolls, total, mod, sides, count};
-  }
-
-  rollBtn.addEventListener('click', ()=>{
-    const expr = diceExpr.value.trim();
-    const times = Math.max(1, parseInt(diceCount.value,10)||1);
-    const results = [];
-    try{
-      for(let i=0;i<times;i++){
-        const r = rollExpression(expr);
-        results.push(r);
-        state.diceHistory.push({...r, expr, when: Date.now()});
-      }
-      saveState();
-      const last = results[results.length-1];
-      diceResult.innerHTML = `<div class="card"><strong>Result:</strong> ${last.total} <span class="muted">[${last.rolls.join(', ')}${last.mod ? (last.mod>0? ' +'+last.mod : ' '+last.mod): ''}]</div>`;
-      renderDiceHistory();
-    }catch(e){
-      diceResult.innerHTML = `<div class="danger">Error: ${e.message}</div>`;
-    }
   });
+}
 
-  clearDiceHistory.addEventListener('click', ()=>{
-    state.diceHistory = [];
-    saveState();
-    renderDiceHistory();
+function showConfirm(message) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('customModal');
+    const messageEl = document.getElementById('modalMessage');
+    const buttonsEl = document.getElementById('modalButtons');
+    
+    messageEl.textContent = message;
+    buttonsEl.innerHTML = `
+      <button class="modal-btn-cancel" id="modalCancelBtn">Cancel</button>
+      <button class="modal-btn-ok" id="modalConfirmBtn">Confirm</button>
+    `;
+    
+    modal.classList.add('active');
+    
+    const confirmBtn = document.getElementById('modalConfirmBtn');
+    const cancelBtn = document.getElementById('modalCancelBtn');
+    
+    const closeModal = (result) => {
+      modal.classList.remove('active');
+      resolve(result);
+    };
+    
+    confirmBtn.onclick = () => closeModal(true);
+    cancelBtn.onclick = () => closeModal(false);
+    modal.onclick = (e) => {
+      if (e.target === modal) closeModal(false);
+    };
   });
+}
 
-  // --------------------------
-  // Character UI
-  // --------------------------
-  const charName = $('#charName');
-  const attrsGrid = $('#attrsGrid');
-  const pointsLeft = $('#pointsLeft');
-  const reductionsUsed = $('#reductionsUsed');
-  const xpDisplay = $('#xpDisplay');
-  const xpValue = $('#xpValue');
-  const xpUnspent = $('#xpUnspent');
-  const derivedTableBody = $('#derivedTable tbody');
-  const autoLanguages = $('#autoLanguages');
-  const tradeLangSelect = $('#tradeLangSelect');
-  const tradeSkillSelect = $('#tradeSkillSelect');
-  const tradeLanguageBtn = $('#tradeLanguageBtn');
-  const skillsList = $('#skillsList');
-  const autoAssignSkillsBtn = $('#autoAssignSkills');
-  const clearSkillsBtn = $('#clearSkills');
-  const resetAttrsBtn = $('#resetAttrs');
-  const buyAttrBtn = $('#buyAttrBtn');
-  const buySkillBtn = $('#buySkillBtn');
-  const buyTalentBtn = $('#buyTalentBtn');
-  const purchaseLogDiv = $('#purchaseLog');
-  const exportArea = $('#exportArea');
-  const exportCharBtn = $('#exportCharBtn');
-  const importCharBtn = $('#importCharBtn');
-  const attackerSelect = $('#attackerSelect');
+// ==================== GLOBAL STATE ====================
+const STORAGE_KEY = 'gpsg_companion_v3';
+let state = {
+  characters: [],
+  diceHistory: [],
+  currentChar: null,
+  creationChar: null,
+  creationStage: 1,
+  isEditingExisting: false
+};
 
-  function ensureCharacter(){
-    if(!state.character) state.character = newCharacter();
+const SKILLS = [
+  'Athletics', 'Stealth', 'Handgun', 'Rifle', 'Melee', 'Repair', 
+  'First Aid', 'Persuasion', 'Intimidation', 'Trade', 'Pilot', 'Survival',
+  'Lockpicking', 'Sleight of Hand', 'Acrobatics', 'Investigation'
+];
+
+const KNOWLEDGE_SKILLS = [
+  'History', 'Science', 'Arcana', 
+  'Politics', 'Religion', 'Nature'
+];
+
+const ALL_SKILLS = [...SKILLS, ...KNOWLEDGE_SKILLS];
+
+// ==================== UTILITY FUNCTIONS ====================
+function randomInt(min, max) {
+  if (window.crypto && crypto.getRandomValues) {
+    const range = max - min + 1;
+    const u32 = new Uint32Array(1);
+    crypto.getRandomValues(u32);
+    return min + (u32[0] % range);
   }
-  ensureCharacter();
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
-  function renderAttributes(){
-    ensureCharacter();
-    attrsGrid.innerHTML = '';
-    const char = state.character;
-    const keys = Object.keys(char.attrs);
-    keys.forEach(key=>{
-      const val = char.attrs[key];
-      const wrapper = document.createElement('div');
-      wrapper.className = 'card';
-      wrapper.style.padding='8px';
-      wrapper.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><strong>${key}</strong><div class="muted small">Bonus ${bonusFor(val)}</div></div>
-          <div style="text-align:right">
-            <div style="display:flex;gap:6px;align-items:center">
-              <button data-act="dec" data-attr="${key}" class="ghost">-</button>
-              <div style="min-width:44px;text-align:center">${val}</div>
-              <button data-act="inc" data-attr="${key}" class="ghost">+</button>
-            </div>
-            <div style="margin-top:6px;font-size:12px" class="muted">Set to: <input data-setattr="${key}" style="width:80px" type="number" min="10" max="100" value="${val}" /></div>
-            <div style="margin-top:6px"><button data-reduce="${key}" class="ghost">Reduce to 20 (free +5)</button></div>
-          </div>
-        </div>
-      `;
-      attrsGrid.appendChild(wrapper);
-    });
+function rollDie(sides) {
+  return randomInt(1, sides);
+}
 
-    // wire buttons
-    $$('[data-act]', attrsGrid).forEach(b=>{
-      b.addEventListener('click', (ev)=>{
-        const attr = b.dataset.attr;
-        if(b.dataset.act === 'inc'){
-          // try to increment using pointsToDistribute if allowed
-          if(state.character.pointsToDistribute <= 0){
-            alert('No distribution points left.');
-            return;
-          }
-          const newVal = state.character.attrs[attr] + 1;
-          if(newVal > 40){
-            alert('Cannot exceed 40 before spending XP.');
-            return;
-          }
-          state.character.attrs[attr] = newVal;
-          state.character.pointsToDistribute -= 1;
-          saveState(); renderAll();
-        } else {
-          // dec
-          if(state.character.attrs[attr] <= 10) return;
-          // if attr is reduced by earlier reduction, decrementing may change reductions tracking; simply allow dec but not below 20 if reduction button used? We'll allow manual dec but recommend using Reduce to 20 button.
-          state.character.attrs[attr] -= 1;
-          // If this lowered an attribute that was counted as reduced to 20 earlier, updating reductions accordingly.
-          saveState(); renderAll();
-        }
-      });
-    });
+function bonusFor(attr) {
+  // Bonus is the tens digit (e.g., 30 = +3, 39 = +3, 40 = +4)
+  return Math.floor(attr / 10);
+}
 
-    $$('[data-setattr]', attrsGrid).forEach(inp=>{
-      inp.addEventListener('change', ()=>{
-        const key = inp.dataset.setattr;
-        const v = parseInt(inp.value,10);
-        if(Number.isNaN(v)) return;
-        if(v > 40){
-          alert('Cannot set >40 before spending XP.');
-          inp.value = state.character.attrs[key];
-          return;
-        }
-        // Changing directly consumes/returns distribution points relative to base and previous distribution
-        const old = state.character.attrs[key];
-        const delta = v - old;
-        if(delta > 0){
-          if(state.character.pointsToDistribute < delta){
-            alert('Not enough distribution points.');
-            inp.value = old;
-            return;
-          }
-          state.character.pointsToDistribute -= delta;
-        } else {
-          state.character.pointsToDistribute -= delta; // negative delta adds points back
-        }
-        state.character.attrs[key] = v;
-        saveState(); renderAll();
-      });
-    });
+function skillBonus(rank) {
+  // Skill bonus equals 5 times the rank
+  return rank * 5;
+}
 
-    $$('[data-reduce]', attrsGrid).forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        const key = btn.dataset.reduce;
-        const char = state.character;
-        if(char.reductionsUsed >= 4){
-          alert('Already used 4 reductions.');
-          return;
-        }
-        if(char.attrs[key] <= 20){
-          alert(`${key} is already ≤ 20.`);
-          return;
-        }
-        // Free up points equal to (current - 20)
-        const freed = char.attrs[key] - 20;
-        char.attrs[key] = 20;
-        char.pointsToDistribute += freed;
-        char.reductionsUsed = (char.reductionsUsed || 0) + 1;
-        char.reductions[key] = true;
-        saveState(); renderAll();
-      });
-    });
+function parseDiceExpression(expr) {
+  expr = expr.replace(/\s+/g, '');
+  const match = expr.match(/^(\d+)d(\d+)([+-]\d+)?$/i);
+  if (!match) return null;
+  return {
+    count: parseInt(match[1], 10),
+    sides: parseInt(match[2], 10),
+    mod: match[3] ? parseInt(match[3], 10) : 0
+  };
+}
 
-    pointsLeft.textContent = state.character.pointsToDistribute;
-    reductionsUsed.textContent = state.character.reductionsUsed || 0;
+function rollExpression(expr) {
+  const parsed = parseDiceExpression(expr);
+  if (!parsed) throw new Error('Invalid dice expression');
+  const { count, sides, mod } = parsed;
+  const rolls = [];
+  let total = 0;
+  for (let i = 0; i < count; i++) {
+    const r = rollDie(sides);
+    rolls.push(r);
+    total += r;
   }
+  total += mod;
+  return { rolls, total, mod, sides, count };
+}
 
-  function renderDerived(){
-    const char = state.character;
-    const rows = [];
-    for(const k in char.attrs){
-      const v = char.attrs[k];
-      rows.push({k,v,bonus: bonusFor(v)});
-    }
-    derivedTableBody.innerHTML = rows.map(r=>`<tr><td>${r.k}</td><td>${r.v}</td><td>${r.bonus>=0? '+'+r.bonus : r.bonus}</td></tr>`).join('');
-    // languages
-    const intBonus = bonusFor(char.attrs.Intelligence);
-    const numLanguages = Math.max(1, intBonus - 1);
-    // generate placeholder languages if not present
-    if(!char.languages || !Array.isArray(char.languages)) char.languages = [];
-    // ensure at least numLanguages languages exist
-    while(char.languages.length < numLanguages){
-      char.languages.push('Language ' + (char.languages.length+1));
-    }
-    // if user reduced languages by trading, we reflect that elsewhere
-    autoLanguages.innerHTML = '';
-    char.languages.forEach((l,idx)=>{
-      const div = document.createElement('div');
-      div.innerHTML = `<div style="display:flex;justify-content:space-between;padding:4px 0"><div><strong>${l}</strong><div class="muted small">Skill rank 4 (pre-XP)</div></div><div><button data-remove-lang="${idx}" class="ghost">Remove</button></div></div>`;
-      autoLanguages.appendChild(div);
-    });
+// ==================== CHARACTER FUNCTIONS ====================
+function newCharacter() {
+  const base = 25;
+  const attrs = {
+    Agility: base,
+    Charisma: base,
+    Endurance: base,
+    Intelligence: base,
+    Perception: base,
+    'Plot Importance': base,
+    Strength: base,
+    Willpower: base
+  };
+  const skills = {};
+  ALL_SKILLS.forEach(s => skills[s] = 0);
+  
+  return {
+    id: Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+    name: 'New Character',
+    attrs,
+    skills,
+    talents: [],
+    languages: [],
+    pointsToDistribute: 40,
+    xpTotal: 2000,
+    xpSpent: 0,
+    purchaseLog: [],
+    freeSkillsUsed: { rank0: 0, rank2: 0, rank4: 0, knowledge: 0 },
+    freeSkillsList: [],
+    knowledgeSkillsList: [],
+    tradedLanguages: [],
+    xpPurchases: {
+      attributes: {},  // Track XP spent on each attribute
+      skills: {}       // Track XP spent on each skill rank
+    },
+    baseAttrs: {},  // Store initial attributes before XP spending
+    skillUpgrades: {},  // Track XP upgrades to Stage 2 skills
+    xpSkillsList: []  // New skills purchased with XP in Stage 3
+  };
+}
 
-    // trade language options
-    tradeLangSelect.innerHTML = char.languages.map((l,i)=>`<option value="${i}">${l}</option>`).join('');
-    tradeSkillSelect.innerHTML = ALL_SKILLS.map(s=>`<option value="${s}">${s}</option>`).join('');
-
-    // update xp display
-    xpDisplay.textContent = char.xpTotal;
-    xpValue.value = char.xpTotal - char.xpSpent;
-    updateUnspentXP();
+// Count attributes below 25
+function countAttributesBelowBase(char) {
+  let count = 0;
+  for (let key in char.attrs) {
+    if (char.attrs[key] < 25) count++;
   }
+  return count;
+}
 
-  tradeLanguageBtn.addEventListener('click', ()=>{
-    const char = state.character;
-    const idx = parseInt(tradeLangSelect.value,10);
-    const skill = tradeSkillSelect.value;
-    if(char.languages.length <= 1){
-      alert('Must keep at least 1 language.');
-      return;
+// Validate attribute change during creation
+function validateAttributeChange(char, attrKey, newValue) {
+  const oldValue = char.attrs[attrKey];
+  
+  if (newValue < 25 && oldValue >= 25) {
+    const currentBelowBase = countAttributesBelowBase(char);
+    if (currentBelowBase >= 4) {
+      return { valid: false, message: 'Cannot lower more than 4 attributes below 25.' };
     }
-    // Remove language and give skill rank 2
-    const removed = char.languages.splice(idx,1)[0];
-    char.skills[skill] = Math.max(char.skills[skill]||0, 2);
-    char.purchaseLog.push({when:Date.now(), note:`Traded language "${removed}" for skill ${skill} at rank 2 (free)`});
-    saveState(); renderAll();
+  }
+  
+  if (newValue > 40 && state.creationStage === 1) {
+    return { valid: false, message: 'Cannot exceed 40 during this stage.' };
+  }
+  
+  if (newValue > 50) {
+    return { valid: false, message: 'Cannot exceed 50 maximum.' };
+  }
+  
+  if (newValue < 20) {
+    return { valid: false, message: 'Cannot lower attribute below 20.' };
+  }
+  
+  return { valid: true };
+}
+
+// Set attribute during creation (Stage 1)
+function setCreationAttribute(attrKey, newValue) {
+  const char = state.creationChar;
+  const oldValue = char.attrs[attrKey];
+  
+  const validation = validateAttributeChange(char, attrKey, newValue);
+  if (!validation.valid) {
+    showAlert(validation.message);
+    return false;
+  }
+  
+  // Temporarily set the new value to calculate total
+  char.attrs[attrKey] = newValue;
+  
+  // Calculate sum of all attributes
+  const totalAttributePoints = Object.values(char.attrs).reduce((sum, val) => sum + val, 0);
+  
+  // Total budget is 240 (8 attrs × 25 base + 40 extra points)
+  const totalBudget = 240;
+  const pointsNeeded = totalAttributePoints - totalBudget;
+  
+  // Check if we have enough points
+  if (pointsNeeded > 0) {
+    // Revert the change
+    char.attrs[attrKey] = oldValue;
+    showAlert('Not enough distribution points.');
+    return false;
+  }
+  
+  // Update available points based on total formula
+  char.pointsToDistribute = totalBudget - totalAttributePoints;
+  
+  renderCreationStage1();
+  return true;
+}
+
+// Buy attribute with XP (Stage 3)
+function buyAttributePoint(attrKey) {
+  const char = state.creationChar;
+  const currentValue = char.attrs[attrKey];
+  const newValue = currentValue + 1;
+  
+  if (newValue > 50) {
+    showAlert('Cannot exceed 50 maximum.');
+    return;
+  }
+  
+  let cost;
+  if (currentValue < 40) {
+    cost = 100;
+  } else {
+    cost = 200;
+  }
+  
+  const remaining = char.xpTotal - char.xpSpent;
+  if (remaining < cost) {
+    showAlert('Not enough XP.');
+    return;
+  }
+  
+  // Track this purchase
+  if (!char.xpPurchases.attributes[attrKey]) {
+    char.xpPurchases.attributes[attrKey] = [];
+  }
+  char.xpPurchases.attributes[attrKey].push(cost);
+  
+  char.attrs[attrKey] = newValue;
+  char.xpSpent += cost;
+  char.purchaseLog.push({
+    when: Date.now(),
+    note: `Bought ${attrKey} +1 (${currentValue} → ${newValue}) for ${cost} XP`,
+    type: 'attribute',
+    key: attrKey,
+    cost: cost
   });
   
-  // language remove (from autoLanguages)
-  autoLanguages.addEventListener('click', (ev)=>{
-    const btn = ev.target.closest('[data-remove-lang]');
-    if(!btn) return;
-    const idx = parseInt(btn.dataset.removeLang,10);
-    const char = state.character;
-    if(char.languages.length <= 1){
-      alert('Must keep at least 1 language.');
+  saveState();
+  renderCreationStage3();
+}
+
+function refundAttributePoint(attrKey) {
+  const char = state.creationChar;
+  
+  // Check if any XP was spent on this attribute
+  if (!char.xpPurchases.attributes[attrKey] || char.xpPurchases.attributes[attrKey].length === 0) {
+    showAlert('No XP spent on this attribute.');
+    return;
+  }
+  
+  const currentValue = char.attrs[attrKey];
+  const baseValue = char.baseAttrs[attrKey] || 25;
+  
+  if (currentValue <= baseValue) {
+    showAlert('Cannot reduce below base value.');
+    return;
+  }
+  
+  // Refund the last purchase
+  const costToRefund = char.xpPurchases.attributes[attrKey].pop();
+  char.attrs[attrKey] = currentValue - 1;
+  char.xpSpent -= costToRefund;
+  
+  char.purchaseLog.push({
+    when: Date.now(),
+    note: `Refunded ${attrKey} -1 (${currentValue} → ${currentValue - 1}) for ${costToRefund} XP`,
+    type: 'refund'
+  });
+  
+  saveState();
+  renderCreationStage3();
+}
+
+// Calculate skill rank cost
+function getSkillRankCost(currentRank, targetRank) {
+  if (currentRank >= targetRank) return 0;
+  
+  let totalCost = 0;
+  for (let rank = currentRank + 1; rank <= targetRank; rank++) {
+    if (rank === 0) {
+      totalCost += 100;
+    } else {
+      totalCost += 50 * rank;
+    }
+  }
+  return totalCost;
+}
+
+// Add a new skill to buy with XP
+function addXPSkill() {
+  const char = state.creationChar;
+  
+  // Check if we have enough XP for rank 0
+  const remaining = char.xpTotal - char.xpSpent;
+  if (remaining < 100) {
+    showAlert('Not enough XP. Need 100 XP to add a skill at rank 0.');
+    return;
+  }
+  
+  const skillId = 'xpskill_' + Date.now();
+  if (!char.xpSkillsList) char.xpSkillsList = [];
+  
+  char.xpSkillsList.push({
+    id: skillId,
+    name: '',
+    rank: 0,
+    isCustom: false,
+    xpSpentOnRanks: [100]  // Track XP spent on each rank
+  });
+  
+  // Charge for rank 0
+  char.xpSpent += 100;
+  char.purchaseLog.push({
+    when: Date.now(),
+    note: `Added new skill at rank 0 for 100 XP`,
+    type: 'skill'
+  });
+  
+  saveState();
+  renderCreationStage3();
+}
+
+// Increase skill rank with XP
+function increaseSkillRank(skillId) {
+  const char = state.creationChar;
+  const skill = char.xpSkillsList.find(s => s.id === skillId);
+  if (!skill) return;
+  
+  const currentRank = skill.rank;
+  const newRank = currentRank + 1;
+  const cost = 50 * newRank;
+  
+  const remaining = char.xpTotal - char.xpSpent;
+  if (remaining < cost) {
+    showAlert('Not enough XP.');
+    return;
+  }
+  
+  skill.rank = newRank;
+  skill.xpSpentOnRanks.push(cost);
+  char.xpSpent += cost;
+  
+  char.purchaseLog.push({
+    when: Date.now(),
+    note: `Increased ${skill.name || 'skill'} to rank ${newRank} for ${cost} XP`,
+    type: 'skill'
+  });
+  
+  saveState();
+  renderCreationStage3();
+}
+
+// Decrease skill rank to refund XP
+function decreaseSkillRank(skillId) {
+  const char = state.creationChar;
+  const skill = char.xpSkillsList.find(s => s.id === skillId);
+  if (!skill) return;
+  
+  if (skill.rank === 0) {
+    showAlert('Cannot decrease below rank 0. Use delete button to remove skill.');
+    return;
+  }
+  
+  const currentRank = skill.rank;
+  const costToRefund = skill.xpSpentOnRanks.pop();
+  skill.rank = currentRank - 1;
+  char.xpSpent -= costToRefund;
+  
+  char.purchaseLog.push({
+    when: Date.now(),
+    note: `Decreased ${skill.name || 'skill'} to rank ${skill.rank}, refunded ${costToRefund} XP`,
+    type: 'refund'
+  });
+  
+  saveState();
+  renderCreationStage3();
+}
+
+// Remove XP skill completely
+function removeXPSkill(skillId) {
+  const char = state.creationChar;
+  const skill = char.xpSkillsList.find(s => s.id === skillId);
+  if (!skill) return;
+  
+  // Refund all XP spent on this skill
+  const totalRefund = skill.xpSpentOnRanks.reduce((sum, cost) => sum + cost, 0);
+  char.xpSpent -= totalRefund;
+  
+  char.xpSkillsList = char.xpSkillsList.filter(s => s.id !== skillId);
+  
+  char.purchaseLog.push({
+    when: Date.now(),
+    note: `Removed skill ${skill.name || 'unnamed'}, refunded ${totalRefund} XP`,
+    type: 'refund'
+  });
+  
+  saveState();
+  renderCreationStage3();
+}
+
+function setXPSkillName(skillId, newName) {
+  const char = state.creationChar;
+  if (!char.xpSkillsList) return;
+  const skill = char.xpSkillsList.find(s => s.id === skillId);
+  if (skill) {
+    skill.name = newName;
+  }
+  saveState();
+  renderCreationStage3();
+}
+
+function setXPSkillToCustom(skillId) {
+  const char = state.creationChar;
+  if (!char.xpSkillsList) return;
+  const skill = char.xpSkillsList.find(s => s.id === skillId);
+  if (skill) {
+    skill.isCustom = true;
+    skill.name = '';
+  }
+  renderCreationStage3();
+}
+
+// Increase existing skill rank (from Stage 2)
+function increaseExistingSkillRank(skillName) {
+  const char = state.creationChar;
+  if (!char.skillUpgrades) char.skillUpgrades = {};
+  
+  // Find the base skill from Stage 2
+  let baseSkill = char.freeSkillsList.find(s => s.name === skillName);
+  if (!baseSkill) {
+    baseSkill = char.knowledgeSkillsList.find(s => s.name === skillName);
+  }
+  if (!baseSkill) return;
+  
+  // Initialize upgrade tracking if needed
+  if (!char.skillUpgrades[skillName]) {
+    char.skillUpgrades[skillName] = {
+      rank: baseSkill.rank,
+      xpSpent: []
+    };
+  }
+  
+  const currentRank = char.skillUpgrades[skillName].rank;
+  const newRank = currentRank + 1;
+  const cost = 50 * newRank;
+  
+  const remaining = char.xpTotal - char.xpSpent;
+  if (remaining < cost) {
+    showAlert('Not enough XP.');
+    return;
+  }
+  
+  char.skillUpgrades[skillName].rank = newRank;
+  char.skillUpgrades[skillName].xpSpent.push(cost);
+  char.xpSpent += cost;
+  
+  char.purchaseLog.push({
+    when: Date.now(),
+    note: `Increased ${skillName} to rank ${newRank} for ${cost} XP`,
+    type: 'skill'
+  });
+  
+  saveState();
+  renderCreationStage3();
+}
+
+// Decrease existing skill rank (from Stage 2)
+function decreaseExistingSkillRank(skillName) {
+  const char = state.creationChar;
+  if (!char.skillUpgrades || !char.skillUpgrades[skillName]) return;
+  
+  // Find the base skill to get minimum rank
+  let baseSkill = char.freeSkillsList.find(s => s.name === skillName);
+  if (!baseSkill) {
+    baseSkill = char.knowledgeSkillsList.find(s => s.name === skillName);
+  }
+  if (!baseSkill) return;
+  
+  const currentRank = char.skillUpgrades[skillName].rank;
+  const minRank = baseSkill.rank;
+  
+  if (currentRank <= minRank) {
+    showAlert('Cannot decrease below the rank from Stage 2.');
+    return;
+  }
+  
+  // Refund the last upgrade
+  const costToRefund = char.skillUpgrades[skillName].xpSpent.pop();
+  char.skillUpgrades[skillName].rank = currentRank - 1;
+  char.xpSpent -= costToRefund;
+  
+  char.purchaseLog.push({
+    when: Date.now(),
+    note: `Decreased ${skillName} to rank ${currentRank - 1}, refunded ${costToRefund} XP`,
+    type: 'refund'
+  });
+  
+  // If back to base rank, remove upgrade tracking
+  if (char.skillUpgrades[skillName].rank === minRank) {
+    delete char.skillUpgrades[skillName];
+  }
+  
+  saveState();
+  renderCreationStage3();
+}
+
+// Assign free starting skill
+function assignFreeSkill(skillName, rank) {
+  const char = state.creationChar;
+  const isKnowledge = KNOWLEDGE_SKILLS.includes(skillName);
+  
+  // Check limits
+  if (rank === 0 && !isKnowledge) {
+    if (char.freeSkillsUsed.rank0 >= 6) {
+      showAlert('Already used all 6 rank 0 slots.');
       return;
     }
-    const removed = char.languages.splice(idx,1)[0];
-    char.purchaseLog.push({when:Date.now(), note:`Removed language "${removed}"`});
-    saveState(); renderAll();
+  } else if (rank === 0 && isKnowledge) {
+    if (char.freeSkillsUsed.knowledge >= 2) {
+      showAlert('Already used both Knowledge rank 0 slots.');
+      return;
+    }
+  } else if (rank === 2) {
+    if (char.freeSkillsUsed.rank2 >= 4) {
+      showAlert('Already used all 4 rank 2 slots.');
+      return;
+    }
+  } else if (rank === 4) {
+    if (char.freeSkillsUsed.rank4 >= 2) {
+      showAlert('Already used both rank 4 slots.');
+      return;
+    }
+  }
+  
+  // Check if already at this rank or higher
+  if (char.skills[skillName] >= rank) {
+    showAlert(`${skillName} is already at rank ${char.skills[skillName]}.`);
+    return;
+  }
+  
+  // Assign
+  char.skills[skillName] = rank;
+  
+  // Update counter
+  if (rank === 0 && !isKnowledge) {
+    char.freeSkillsUsed.rank0++;
+  } else if (rank === 0 && isKnowledge) {
+    char.freeSkillsUsed.knowledge++;
+  } else if (rank === 2) {
+    char.freeSkillsUsed.rank2++;
+  } else if (rank === 4) {
+    char.freeSkillsUsed.rank4++;
+  }
+  
+  char.purchaseLog.push({
+    when: Date.now(),
+    note: `Assigned free skill: ${skillName} at rank ${rank}`
   });
+  
+  renderCreationStage2();
+}
 
-  // Skills rendering and basic handlers
-  function renderSkills(){
-    const char = state.character;
-    skillsList.innerHTML = '';
-    ALL_SKILLS.forEach(s=>{
-      const el = document.createElement('div');
-      el.style.display = 'flex';
-      el.style.justifyContent = 'space-between';
-      el.style.alignItems = 'center';
-      el.style.padding = '4px 0';
-      const rank = char.skills[s] || 0;
-      el.innerHTML = `<div><strong>${s}</strong><div class="muted small">Rank ${rank}</div></div><div><button data-skill="${s}" class="ghost">Change</button></div>`;
-      skillsList.appendChild(el);
+// Trade language for skill
+function tradeLanguage(langIndex) {
+  const char = state.creationChar;
+  
+  if (char.languages.length <= 1) {
+    showAlert('Must keep at least 1 language.');
+    return;
+  }
+  
+  const skillName = prompt('Enter skill name to receive at rank 2:');
+  if (!skillName) return;
+  
+  if (!ALL_SKILLS.includes(skillName)) {
+    showAlert('Invalid skill name.');
+    return;
+  }
+  
+  const removed = char.languages.splice(langIndex, 1)[0];
+  char.skills[skillName] = Math.max(char.skills[skillName], 2);
+  
+  char.purchaseLog.push({
+    when: Date.now(),
+    note: `Traded language "${removed}" for ${skillName} at rank 2`
+  });
+  
+  renderCreationStage2();
+}
+
+// Buy talent
+function buyTalent() {
+  const char = state.creationChar;
+  const name = document.getElementById('talentName').value.trim();
+  const tier = parseInt(document.getElementById('talentTier').value);
+  
+  if (!name) {
+    showAlert('Enter a talent name.');
+    return;
+  }
+  
+  const costs = { 1: 200, 2: 400, 3: 600 };
+  const cost = costs[tier];
+  
+  const remaining = char.xpTotal - char.xpSpent;
+  if (remaining < cost) {
+    showAlert('Not enough XP.');
+    return;
+  }
+  
+  const talentId = 'talent_' + Date.now();
+  char.talents.push({ 
+    id: talentId,
+    name, 
+    tier,
+    cost 
+  });
+  char.xpSpent += cost;
+  char.purchaseLog.push({
+    when: Date.now(),
+    note: `Bought talent "${name}" (Tier ${tier}) for ${cost} XP`,
+    type: 'talent'
+  });
+  
+  document.getElementById('talentName').value = '';
+  saveState();
+  renderCreationStage3();
+}
+
+function deleteTalent(talentId) {
+  const char = state.creationChar;
+  const talent = char.talents.find(t => t.id === talentId);
+  if (!talent) return;
+  
+  // Refund XP
+  char.xpSpent -= talent.cost;
+  char.talents = char.talents.filter(t => t.id !== talentId);
+  
+  char.purchaseLog.push({
+    when: Date.now(),
+    note: `Deleted talent "${talent.name}" (Tier ${talent.tier}), refunded ${talent.cost} XP`,
+    type: 'refund'
+  });
+  
+  saveState();
+  renderCreationStage3();
+}
+
+// Toggle collapsible sections
+function toggleCollapsible(id) {
+  const header = document.getElementById(id + 'Header');
+  const content = document.getElementById(id + 'Content');
+  
+  if (header && content) {
+    header.classList.toggle('collapsed');
+    content.classList.toggle('collapsed');
+  }
+}
+
+// ==================== CHARACTER CREATION FLOW ====================
+function startCharacterCreation() {
+  state.creationChar = newCharacter();
+  state.creationStage = 1;
+  
+  document.getElementById('characterListView').style.display = 'none';
+  document.getElementById('characterSheetView').style.display = 'none';
+  document.getElementById('characterCreationView').style.display = 'block';
+  
+  renderCreationStage1();
+}
+
+async function cancelCharacterCreation() {
+  if (state.isEditingExisting) {
+    const confirmed = await showConfirm('Discard changes and return to character list?');
+    if (!confirmed) return;
+    state.creationChar = null;
+    state.creationStage = 1;
+    state.isEditingExisting = false;
+    showCharacterList();
+  } else {
+    const confirmed = await showConfirm('Cancel character creation? All progress will be lost.');
+    if (!confirmed) return;
+    state.creationChar = null;
+    state.creationStage = 1;
+    showCharacterList();
+  }
+}
+
+// ==================== STAGE 2: FREE SKILLS FUNCTIONS ====================
+function addFreeSkill() {
+  const char = state.creationChar;
+  const skillId = 'skill_' + Date.now();
+  char.freeSkillsList.push({
+    id: skillId,
+    name: '',  // Empty until selected
+    rank: null,  // No rank selected initially
+    isCustom: false  // Start with dropdown
+  });
+  renderCreationStage2();
+}
+
+function addKnowledgeSkill() {
+  const char = state.creationChar;
+  
+  // Check if already at limit
+  if (char.freeSkillsUsed.knowledge >= 2) {
+    showAlert('Already used both Knowledge rank 0 slots.');
+    return;
+  }
+  
+  const skillId = 'knowledge_' + Date.now();
+  char.knowledgeSkillsList.push({
+    id: skillId,
+    name: '',  // Empty until selected
+    rank: 0,  // Knowledge skills default to rank 0
+    isCustom: false  // Start with dropdown
+  });
+  
+  // Increment counter immediately
+  char.freeSkillsUsed.knowledge++;
+  renderCreationStage2();
+}
+
+function removeFreeSkill(skillId) {
+  const char = state.creationChar;
+  const skill = char.freeSkillsList.find(s => s.id === skillId);
+  if (skill) {
+    // Only decrement counter if a rank was selected
+    if (skill.rank === 0) char.freeSkillsUsed.rank0--;
+    else if (skill.rank === 2) char.freeSkillsUsed.rank2--;
+    else if (skill.rank === 4) char.freeSkillsUsed.rank4--;
+    char.freeSkillsList = char.freeSkillsList.filter(s => s.id !== skillId);
+  }
+  renderCreationStage2();
+}
+
+function removeKnowledgeSkill(skillId) {
+  const char = state.creationChar;
+  const skill = char.knowledgeSkillsList.find(s => s.id === skillId);
+  if (skill) {
+    // Always decrement for knowledge skills since they're always rank 0
+    if (skill.rank === 0) {
+      char.freeSkillsUsed.knowledge--;
+    }
+    char.knowledgeSkillsList = char.knowledgeSkillsList.filter(s => s.id !== skillId);
+  }
+  renderCreationStage2();
+}
+
+function setFreeSkillRank(skillId, rank) {
+  const char = state.creationChar;
+  const skill = char.freeSkillsList.find(s => s.id === skillId);
+  if (!skill) return;
+  
+  const oldRank = skill.rank;
+  
+  // Check limits (only if we're not already using this rank)
+  if (rank === 0) {
+    if (oldRank !== 0 && char.freeSkillsUsed.rank0 >= 6) {
+      showAlert('Already used all 6 rank 0 slots.');
+      return;
+    }
+  } else if (rank === 2) {
+    if (oldRank !== 2 && char.freeSkillsUsed.rank2 >= 4) {
+      showAlert('Already used all 4 rank 2 slots.');
+      return;
+    }
+  } else if (rank === 4) {
+    if (oldRank !== 4 && char.freeSkillsUsed.rank4 >= 2) {
+      showAlert('Already used both rank 4 slots.');
+      return;
+    }
+  }
+  
+  // Decrement old counter (only if oldRank was set)
+  if (oldRank === 0) char.freeSkillsUsed.rank0--;
+  else if (oldRank === 2) char.freeSkillsUsed.rank2--;
+  else if (oldRank === 4) char.freeSkillsUsed.rank4--;
+  
+  // Set new rank and increment counter
+  skill.rank = rank;
+  if (rank === 0) char.freeSkillsUsed.rank0++;
+  else if (rank === 2) char.freeSkillsUsed.rank2++;
+  else if (rank === 4) char.freeSkillsUsed.rank4++;
+  
+  renderCreationStage2();
+}
+
+function setKnowledgeSkillRank(skillId, rank) {
+  const char = state.creationChar;
+  const skill = char.knowledgeSkillsList.find(s => s.id === skillId);
+  if (!skill) return;
+  
+  const oldRank = skill.rank;
+  
+  if (rank === 0) {
+    if (oldRank !== 0 && char.freeSkillsUsed.knowledge >= 2) {
+      showAlert('Already used both Knowledge rank 0 slots.');
+      return;
+    }
+  }
+  
+  if (oldRank === 0) char.freeSkillsUsed.knowledge--;
+  skill.rank = rank;
+  if (rank === 0) char.freeSkillsUsed.knowledge++;
+  
+  renderCreationStage2();
+}
+
+function setSkillName(skillId, newName, listType) {
+  const char = state.creationChar;
+  const list = listType === 'knowledge' ? char.knowledgeSkillsList : char.freeSkillsList;
+  const skill = list.find(s => s.id === skillId);
+  if (skill) {
+    skill.name = newName;
+  }
+  renderCreationStage2();
+}
+
+function setSkillToCustom(skillId, listType) {
+  const char = state.creationChar;
+  const list = listType === 'knowledge' ? char.knowledgeSkillsList : char.freeSkillsList;
+  const skill = list.find(s => s.id === skillId);
+  if (skill) {
+    skill.isCustom = true;
+    skill.name = '';  // Empty so user can type their custom skill
+  }
+  renderCreationStage2();
+}
+
+function tradeLanguage(langIndex) {
+  const char = state.creationChar;
+  if (char.tradedLanguages.includes(langIndex)) return;
+  
+  const remaining = char.languages.length - char.tradedLanguages.length;
+  if (remaining <= 1) {
+    showAlert('Must keep at least 1 language.');
+    return;
+  }
+  
+  char.tradedLanguages.push(langIndex);
+  
+  // Add a new free skill card at rank 2
+  const skillId = 'traded_' + Date.now();
+  char.freeSkillsList.push({
+    id: skillId,
+    name: 'Custom',
+    rank: 2,
+    isCustom: true,
+    fromTrade: true
+  });
+  char.freeSkillsUsed.rank2++;
+  
+  renderCreationStage2();
+}
+
+function undoTradeLanguage(langIndex) {
+  const char = state.creationChar;
+  const idx = char.tradedLanguages.indexOf(langIndex);
+  if (idx === -1) return;
+  
+  char.tradedLanguages.splice(idx, 1);
+  
+  // Remove the traded skill card (find the most recent fromTrade skill)
+  const tradedSkillIdx = char.freeSkillsList.findIndex(s => s.fromTrade);
+  if (tradedSkillIdx !== -1) {
+    char.freeSkillsList.splice(tradedSkillIdx, 1);
+    char.freeSkillsUsed.rank2--;
+  }
+  
+  renderCreationStage2();
+}
+
+function updateLanguageName(langIndex, newName) {
+  const char = state.creationChar;
+  char.languages[langIndex] = newName;
+}
+
+function confirmFreeSkillsStage() {
+  const char = state.creationChar;
+  
+  // Save base attributes before XP spending
+  char.baseAttrs = { ...char.attrs };
+  
+  state.creationStage = 3;
+  document.getElementById('creationStage2').style.display = 'none';
+  document.getElementById('creationStage3').style.display = 'block';
+  document.getElementById('stage2Indicator').classList.add('completed');
+  document.getElementById('stage2Indicator').classList.remove('active');
+  document.getElementById('stage3Indicator').classList.add('active');
+  
+  renderCreationStage3();
+}
+
+function goToStage(stageNum) {
+  // Hide all stages
+  document.getElementById('creationStage1').style.display = 'none';
+  document.getElementById('creationStage2').style.display = 'none';
+  document.getElementById('creationStage3').style.display = 'none';
+  
+  // Reset indicators
+  document.getElementById('stage1Indicator').classList.remove('active', 'completed');
+  document.getElementById('stage2Indicator').classList.remove('active', 'completed');
+  document.getElementById('stage3Indicator').classList.remove('active', 'completed');
+  
+  // Show selected stage
+  state.creationStage = stageNum;
+  if (stageNum === 1) {
+    document.getElementById('creationStage1').style.display = 'block';
+    document.getElementById('stage1Indicator').classList.add('active');
+    renderCreationStage1();
+  } else if (stageNum === 2) {
+    document.getElementById('creationStage2').style.display = 'block';
+    document.getElementById('stage1Indicator').classList.add('completed');
+    document.getElementById('stage2Indicator').classList.add('active');
+    renderCreationStage2();
+  } else if (stageNum === 3) {
+    document.getElementById('creationStage3').style.display = 'block';
+    document.getElementById('stage1Indicator').classList.add('completed');
+    document.getElementById('stage2Indicator').classList.add('completed');
+    document.getElementById('stage3Indicator').classList.add('active');
+    renderCreationStage3();
+  }
+}
+
+function confirmAttributesStage() {
+  const char = state.creationChar;
+  
+  if (!document.getElementById('creationCharName').value.trim()) {
+    showAlert('Please enter a character name.');
+    return;
+  }
+  
+  char.name = document.getElementById('creationCharName').value.trim();
+  
+  // Initialize languages based on IntBonus (tens digit)
+  const intBonus = Math.floor(char.attrs.Intelligence / 10);
+  const numLanguages = Math.max(1, intBonus - 1);
+  char.languages = [];
+  for (let i = 0; i < numLanguages; i++) {
+    char.languages.push('');
+  }
+  
+  state.creationStage = 2;
+  document.getElementById('creationStage1').style.display = 'none';
+  document.getElementById('creationStage2').style.display = 'block';
+  document.getElementById('stage1Indicator').classList.add('completed');
+  document.getElementById('stage1Indicator').classList.remove('active');
+  document.getElementById('stage2Indicator').classList.add('active');
+  
+  renderCreationStage2();
+}
+
+async function finishCharacterCreation() {
+  const char = state.creationChar;
+  
+  // Check if we're editing an existing character
+  if (state.isEditingExisting) {
+    finishEditingCharacter();
+    return;
+  }
+  
+  const confirmed = await showConfirm('Finish character creation?');
+  if (!confirmed) return;
+  
+  // Apply free skills to character's skills object
+  char.freeSkillsList.forEach(skill => {
+    if (skill.rank !== null && skill.name && skill.name !== 'Custom' && skill.name !== '') {
+      // Check if this skill was upgraded with XP
+      const finalRank = char.skillUpgrades && char.skillUpgrades[skill.name] 
+        ? char.skillUpgrades[skill.name].rank 
+        : skill.rank;
+      char.skills[skill.name] = Math.max(char.skills[skill.name] || 0, finalRank);
+    }
+  });
+  
+  // Apply knowledge skills
+  char.knowledgeSkillsList.forEach(skill => {
+    if (skill.rank !== null && skill.name && skill.name !== 'Custom' && skill.name !== '') {
+      // Check if this skill was upgraded with XP
+      const finalRank = char.skillUpgrades && char.skillUpgrades[skill.name] 
+        ? char.skillUpgrades[skill.name].rank 
+        : skill.rank;
+      char.skills[skill.name] = Math.max(char.skills[skill.name] || 0, finalRank);
+    }
+  });
+  
+  // Apply XP-purchased skills
+  if (char.xpSkillsList) {
+    char.xpSkillsList.forEach(skill => {
+      if (skill.name && skill.name !== '') {
+        char.skills[skill.name] = Math.max(char.skills[skill.name] || 0, skill.rank);
+      }
     });
-    // wire change buttons (cycle 0 -> 2 -> 4 -> 0)
-    $$('[data-skill]', skillsList).forEach(b=>{
-      b.addEventListener('click', ()=>{
-        const name = b.dataset.skill;
-        const cur = state.character.skills[name] || 0;
-        const next = cur === 0 ? 2 : cur === 2 ? 4 : 0;
-        state.character.skills[name] = next;
-        saveState(); renderAll();
+  }
+  
+  state.characters.push(char);
+  state.creationChar = null;
+  state.creationStage = 1;
+  
+  saveState();
+  showCharacterList();
+  showAlert(`Character "${char.name}" created successfully!`);
+}
+
+// ==================== RENDERING ====================
+function renderCreationStage1() {
+  const char = state.creationChar;
+  const grid = document.getElementById('creationAttrsGrid');
+  grid.innerHTML = '';
+  
+  document.getElementById('creationStage1').style.display = 'block';
+  document.getElementById('creationStage2').style.display = 'none';
+  document.getElementById('stage1Indicator').classList.add('active');
+  document.getElementById('stage2Indicator').classList.remove('active');
+  
+  for (let key in char.attrs) {
+    const value = char.attrs[key];
+    const card = document.createElement('div');
+    card.className = 'attr-card';
+    card.innerHTML = `
+      <h4>${key}</h4>
+      <div class="attr-controls">
+        <button onclick="setCreationAttribute('${key}', ${value - 1})">-</button>
+        <div class="attr-value">${value}</div>
+        <button onclick="setCreationAttribute('${key}', ${value + 1})">+</button>
+      </div>
+      <div style="margin-top: 10px;">
+        <label>Set to:</label>
+        <input type="number" min="10" max="40" value="${value}" 
+               onchange="setCreationAttribute('${key}', parseInt(this.value))" />
+      </div>
+    `;
+    grid.appendChild(card);
+  }
+  
+  document.getElementById('creationPointsLeft').textContent = char.pointsToDistribute;
+  document.getElementById('creationReductionsUsed').textContent = countAttributesBelowBase(char);
+}
+
+function renderCreationStage2() {
+  const char = state.creationChar;
+  
+  // Update free skills counters
+  document.getElementById('freeRank0Used').textContent = char.freeSkillsUsed.rank0;
+  document.getElementById('freeRank2Used').textContent = char.freeSkillsUsed.rank2;
+  document.getElementById('freeRank4Used').textContent = char.freeSkillsUsed.rank4;
+  document.getElementById('freeKnowledgeUsed').textContent = char.freeSkillsUsed.knowledge;
+  
+  // Render free skills list
+  const freeSkillsList = document.getElementById('freeSkillsList');
+  freeSkillsList.innerHTML = '';
+  char.freeSkillsList.forEach(skill => {
+    const div = document.createElement('div');
+    div.className = 'skill-item';
+    
+    // Build skill name selector
+    let nameHTML;
+    if (skill.isCustom) {
+      // Show text input for custom skill
+      nameHTML = `<input type="text" placeholder="Enter skill name" value="${skill.name}" 
+        onchange="setSkillName('${skill.id}', this.value, 'free')" />`;
+    } else {
+      // Show dropdown by default
+      const hasSelection = skill.name && skill.name !== 'Custom';
+      nameHTML = `
+        <select onchange="if(this.value === 'Custom') { setSkillToCustom('${skill.id}', 'free'); } else if(this.value) { setSkillName('${skill.id}', this.value, 'free'); }">
+          <option value="" ${!hasSelection ? 'selected' : ''} disabled>Select</option>
+          <option value="Custom">Custom</option>
+          ${SKILLS.map(s => `<option value="${s}" ${skill.name === s ? 'selected' : ''}>${s}</option>`).join('')}
+        </select>
+      `;
+    }
+    
+    div.innerHTML = `
+      <div>
+        ${nameHTML}
+      </div>
+      <div class="rank-buttons">
+        <button class="${skill.rank === 0 ? 'active' : ''}" onclick="setFreeSkillRank('${skill.id}', 0)" ${skill.fromTrade ? 'disabled' : ''}>Rank 0</button>
+        <button class="${skill.rank === 2 ? 'active' : ''}" onclick="setFreeSkillRank('${skill.id}', 2)" ${skill.fromTrade ? 'disabled' : ''}>Rank 2</button>
+        <button class="${skill.rank === 4 ? 'active' : ''}" onclick="setFreeSkillRank('${skill.id}', 4)" ${skill.fromTrade ? 'disabled' : ''}>Rank 4</button>
+      </div>
+      <button class="btn-trash" onclick="removeFreeSkill('${skill.id}')">🗑️</button>
+    `;
+    freeSkillsList.appendChild(div);
+  });
+  
+  // Render knowledge skills list
+  const knowledgeSkillsList = document.getElementById('knowledgeSkillsList');
+  knowledgeSkillsList.innerHTML = '';
+  char.knowledgeSkillsList.forEach(skill => {
+    const div = document.createElement('div');
+    div.className = 'skill-item';
+    
+    let nameHTML;
+    if (skill.isCustom) {
+      // Show text input for custom knowledge skill
+      nameHTML = `<input type="text" placeholder="Enter knowledge skill" value="${skill.name}" 
+        onchange="setSkillName('${skill.id}', this.value, 'knowledge')" />`;
+    } else {
+      // Show dropdown by default
+      const hasSelection = skill.name && skill.name !== 'Custom';
+      nameHTML = `
+        <select onchange="if(this.value === 'Custom') { setSkillToCustom('${skill.id}', 'knowledge'); } else if(this.value) { setSkillName('${skill.id}', this.value, 'knowledge'); }">
+          <option value="" ${!hasSelection ? 'selected' : ''} disabled>Select</option>
+          <option value="Custom">Custom</option>
+          ${KNOWLEDGE_SKILLS.map(s => `<option value="${s}" ${skill.name === s ? 'selected' : ''}>${s}</option>`).join('')}
+        </select>
+      `;
+    }
+    
+    div.innerHTML = `
+      <div>
+        ${nameHTML}
+      </div>
+      <div class="rank-buttons">
+        <button class="${skill.rank === 0 ? 'active' : ''}" onclick="setKnowledgeSkillRank('${skill.id}', 0)">Rank 0</button>
+      </div>
+      <button class="btn-trash" onclick="removeKnowledgeSkill('${skill.id}')">🗑️</button>
+    `;
+    knowledgeSkillsList.appendChild(div);
+  });
+  
+  // Render languages
+  const intBonus = Math.floor(char.attrs.Intelligence / 10);
+  const languageCount = Math.max(1, intBonus - 1);
+  document.getElementById('languageCount').textContent = languageCount;
+  
+  const languagesList = document.getElementById('languagesList');
+  languagesList.innerHTML = '';
+  
+  for (let i = 0; i < languageCount; i++) {
+    if (!char.languages[i]) {
+      char.languages[i] = '';
+    }
+    
+    const isTraded = char.tradedLanguages.includes(i);
+    const div = document.createElement('div');
+    div.className = `language-item ${isTraded ? 'traded' : ''}`;
+    
+    div.innerHTML = `
+      <div>
+        <input type="text" placeholder="Language ${i + 1}" value="${char.languages[i]}" 
+               ${isTraded ? 'disabled' : ''}
+               onblur="updateLanguageName(${i}, this.value)" />
+        ${isTraded ? '<small style="color: #ffa94d;"> (Traded)</small>' : ''}
+      </div>
+      <div>
+        ${isTraded ?
+          `<button class="secondary" onclick="undoTradeLanguage(${i})">Undo Trade</button>` :
+          `<button onclick="tradeLanguage(${i})">Trade for Skill Rank 2</button>`
+        }
+      </div>
+    `;
+    languagesList.appendChild(div);
+  }
+}
+
+function renderCreationStage3() {
+  const char = state.creationChar;
+  
+  // Initialize xpSkillsList if it doesn't exist
+  if (!char.xpSkillsList) char.xpSkillsList = [];
+  
+  // Update button text based on mode
+  const finishBtn = document.getElementById('finishCreationBtn');
+  const backBtn = document.getElementById('backToStage2Btn');
+  if (finishBtn) {
+    if (state.isEditingExisting) {
+      finishBtn.textContent = '✓ Save Changes';
+      if (backBtn) backBtn.style.display = 'none';  // Hide back button when editing
+    } else {
+      finishBtn.textContent = '🎉 Finish Character Creation';
+      if (backBtn) backBtn.style.display = 'inline-block';
+    }
+  }
+  
+  // Update XP display (both locations)
+  const remaining = char.xpTotal - char.xpSpent;
+  document.getElementById('creationRemainingXP2').textContent = remaining;
+  document.getElementById('creationTotalXP2').textContent = char.xpTotal;
+  
+  // Render attributes with +/- buttons
+  const xpAttrsGrid = document.getElementById('xpAttrsGrid');
+  xpAttrsGrid.innerHTML = '';
+  for (let key in char.attrs) {
+    const value = char.attrs[key];
+    const baseValue = char.baseAttrs[key] || 25;
+    const cost = value < 40 ? 100 : 200;
+    const hasXPPurchases = char.xpPurchases.attributes[key] && char.xpPurchases.attributes[key].length > 0;
+    
+    const card = document.createElement('div');
+    card.className = 'attr-card';
+    card.innerHTML = `
+      <h4>${key}</h4>
+      <div style="margin: 10px 0;">
+        <span class="attr-value">${value}</span>
+        ${baseValue !== value ? `<small style="color: #51cf66;"> (base: ${baseValue})</small>` : ''}
+      </div>
+      <div class="rank-buttons">
+        <button onclick="refundAttributePoint('${key}')" ${!hasXPPurchases || value <= baseValue ? 'disabled' : ''}>
+          - (refund)
+        </button>
+        <button onclick="buyAttributePoint('${key}')" ${value >= 50 ? 'disabled' : ''}>
+          + (${cost} XP)
+        </button>
+      </div>
+    `;
+    xpAttrsGrid.appendChild(card);
+  }
+  
+  // Render skills (merge free skills from Stage 2 with XP upgradeable system)
+  const xpSkillsList = document.getElementById('xpSkillsList');
+  xpSkillsList.innerHTML = '';
+  
+  // Create a merged skill list with minimum ranks from Stage 2
+  const allSkills = new Map();
+  
+  // Add free skills from Stage 2 with their minimum ranks
+  char.freeSkillsList.forEach(skill => {
+    if (skill.name && skill.rank !== null) {
+      allSkills.set(skill.name, {
+        name: skill.name,
+        minRank: skill.rank,
+        currentRank: skill.rank,
+        xpSpent: [],
+        source: 'free'
       });
+    }
+  });
+  
+  char.knowledgeSkillsList.forEach(skill => {
+    if (skill.name && skill.rank !== null) {
+      allSkills.set(skill.name, {
+        name: skill.name,
+        minRank: skill.rank,
+        currentRank: skill.rank,
+        xpSpent: [],
+        source: 'knowledge'
+      });
+    }
+  });
+  
+  // Merge with XP-purchased upgrades to existing skills
+  // We need to track which Stage 2 skills have been upgraded
+  if (!char.skillUpgrades) char.skillUpgrades = {};
+  
+  // Update current ranks based on XP upgrades
+  for (let [skillName, skillData] of allSkills) {
+    if (char.skillUpgrades[skillName]) {
+      skillData.currentRank = char.skillUpgrades[skillName].rank;
+      skillData.xpSpent = char.skillUpgrades[skillName].xpSpent || [];
+    }
+  }
+  
+  // Render all merged skills
+  if (allSkills.size > 0) {
+    const header = document.createElement('h4');
+    header.textContent = 'Your Skills (Upgradeable with XP)';
+    header.style.color = '#51cf66';
+    xpSkillsList.appendChild(header);
+    
+    for (let [skillName, skillData] of allSkills) {
+      const div = document.createElement('div');
+      div.className = 'skill-item';
+      
+      const nextRankCost = 50 * (skillData.currentRank + 1);
+      const canDecrease = skillData.currentRank > skillData.minRank;
+      
+      div.innerHTML = `
+        <div>
+          <strong>${skillData.name}</strong>
+          <br><small>Rank ${skillData.currentRank} ${skillData.minRank > 0 ? `(min: ${skillData.minRank})` : ''}</small>
+        </div>
+        <div class="rank-buttons">
+          <button onclick="decreaseExistingSkillRank('${skillData.name}')" ${!canDecrease ? 'disabled' : ''}>
+            - (refund)
+          </button>
+          <button onclick="increaseExistingSkillRank('${skillData.name}')">
+            + (${nextRankCost} XP)
+          </button>
+        </div>
+      `;
+      xpSkillsList.appendChild(div);
+    }
+  }
+  
+  // Now show brand new XP-purchased skills (not from Stage 2)
+  if (char.xpSkillsList && char.xpSkillsList.length > 0) {
+    const header = document.createElement('h4');
+    header.textContent = 'New Skills Purchased with XP';
+    header.style.color = '#4a9eff';
+    header.style.marginTop = '20px';
+    xpSkillsList.appendChild(header);
+  
+    char.xpSkillsList.forEach(skill => {
+      const div = document.createElement('div');
+      div.className = 'skill-item';
+      
+      // Skill name selector
+      let nameHTML;
+      if (skill.isCustom) {
+        nameHTML = `<input type="text" placeholder="Enter skill name" value="${skill.name}" 
+          onchange="setXPSkillName('${skill.id}', this.value)" />`;
+      } else {
+        const hasSelection = skill.name && skill.name !== '';
+        nameHTML = `
+          <select onchange="if(this.value === 'Custom') { setXPSkillToCustom('${skill.id}'); } else if(this.value) { setXPSkillName('${skill.id}', this.value); }">
+            <option value="" ${!hasSelection ? 'selected' : ''} disabled>Select</option>
+            <option value="Custom">Custom</option>
+            ${ALL_SKILLS.map(s => `<option value="${s}" ${skill.name === s ? 'selected' : ''}>${s}</option>`).join('')}
+          </select>
+        `;
+      }
+      
+      const nextRankCost = 50 * (skill.rank + 1);
+      
+      div.innerHTML = `
+        <div>
+          ${nameHTML}
+          <small>Rank ${skill.rank}</small>
+        </div>
+        <div class="rank-buttons">
+          <button onclick="decreaseSkillRank('${skill.id}')" ${skill.rank === 0 ? 'disabled' : ''}>
+            - (refund)
+          </button>
+          <button onclick="increaseSkillRank('${skill.id}')">
+            + (${nextRankCost} XP)
+          </button>
+        </div>
+        <button class="btn-trash" onclick="removeXPSkill('${skill.id}')">🗑️</button>
+      `;
+      xpSkillsList.appendChild(div);
     });
   }
-
-  autoAssignSkillsBtn.addEventListener('click', ()=>{
-    // simple sample: give first 6 skills rank 0 (already), next 4 rank 2, next 2 rank 4
-    const char = state.character;
-    ALL_SKILLS.forEach((s,i)=>{
-      if(i < 6) char.skills[s] = 0;
-      else if(i < 10) char.skills[s] = 2;
-      else if(i < 12) char.skills[s] = 4;
-      else char.skills[s] = 0;
-    });
-    saveState(); renderAll();
-  });
-  clearSkillsBtn.addEventListener('click', ()=>{
-    ALL_SKILLS.forEach(s=> state.character.skills[s] = 0);
-    saveState(); renderAll();
-  });
-
-  // Reset attributes to defaults
-  resetAttrsBtn.addEventListener('click', ()=>{
-    if(!confirm('Reset attributes to defaults?')) return;
-    const name = state.character.name || 'New Character';
-    state.character = newCharacter();
-    state.character.name = name;
-    saveState(); renderAll();
-  });
-
-  // XP/Display helpers
-  function updateUnspentXP(){
-    const raw = parseInt(xpValue.value,10);
-    const total = Number.isNaN(raw) ? 0 : raw;
-    const spent = state.character.xpSpent || 0;
-    const unspent = total - spent;
-    xpUnspent.textContent = String(unspent);
-  }
-
-  // Purchase log render
-  function renderPurchaseLog(){
-    const char = state.character;
-    purchaseLogDiv.innerHTML = '';
-    (char.purchaseLog||[]).slice().reverse().forEach(p=>{
-      const d = document.createElement('div');
-      d.style.padding = '4px 0';
-      d.innerHTML = `<div style="display:flex;justify-content:space-between"><div>${p.note}</div><div class="muted">${new Date(p.when).toLocaleString()}</div></div>`;
-      purchaseLogDiv.appendChild(d);
+  
+  // Render talents
+  const talentsList = document.getElementById('talentsList');
+  talentsList.innerHTML = '';
+  if (char.talents.length === 0) {
+    talentsList.innerHTML = '<div class="warning">No talents purchased yet.</div>';
+  } else {
+    char.talents.forEach(talent => {
+      const div = document.createElement('div');
+      div.className = 'talent-item';
+      div.style.display = 'flex';
+      div.style.justifyContent = 'space-between';
+      div.style.alignItems = 'center';
+      div.innerHTML = `
+        <div>
+          <strong>${talent.name}</strong> - Tier ${talent.tier}
+          <small style="color: #999; display: block;">(${talent.cost} XP)</small>
+        </div>
+        <button class="btn-trash" onclick="deleteTalent('${talent.id}')">🗑️ Delete (refund ${talent.cost} XP)</button>
+      `;
+      talentsList.appendChild(div);
     });
   }
+  
+  // Render purchase log with collapsible section
+  const logDiv = document.getElementById('purchaseLog');
+  logDiv.innerHTML = `
+    <div class="collapsible-header collapsed" id="purchaseLogHeader" onclick="toggleCollapsible('purchaseLog')">
+      <strong>Purchase Log (${char.purchaseLog.length} entries)</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="collapsible-content collapsed" id="purchaseLogContent">
+      <div style="max-height: 300px; overflow-y: auto; padding: 10px; border: 1px solid #444; background: #1a1a1a; border-radius: 4px;">
+        ${char.purchaseLog.length === 0 ? '<div class="warning">No purchases yet.</div>' : 
+          char.purchaseLog.slice().reverse().map(entry => `
+            <div style="padding: 5px 0; border-bottom: 1px solid #444;">
+              ${entry.note}
+              <small style="color: #999; display: block;">${new Date(entry.when).toLocaleString()}</small>
+            </div>
+          `).join('')}
+      </div>
+    </div>
+  `;
+}
 
-  // Export/Import and Save/Load
-  document.getElementById('saveBtn').addEventListener('click', ()=>{ saveState(); alert('Saved to localStorage'); });
-  document.getElementById('loadBtn').addEventListener('click', ()=>{ loadState(); renderAll(); alert('Loaded from localStorage'); });
-  document.getElementById('exportBtn').addEventListener('click', ()=>{ const data = JSON.stringify(state, null, 2); exportArea.value = data; alert('Exported JSON to textarea'); });
-  document.getElementById('importBtn').addEventListener('click', ()=>{
-    try{
-      const raw = exportArea.value.trim();
-      if(!raw) return alert('Paste JSON into the textarea first');
-      const parsed = JSON.parse(raw);
-      state = parsed;
-      saveState(); renderAll(); alert('Imported state');
-    }catch(e){ alert('Invalid JSON: '+e.message); }
-  });
-
-  exportCharBtn.addEventListener('click', ()=>{ exportArea.value = JSON.stringify(state.character, null, 2); alert('Character JSON copied to textarea'); });
-  importCharBtn.addEventListener('click', ()=>{
-    try{
-      const raw = exportArea.value.trim();
-      if(!raw) return alert('Paste character JSON into the textarea first');
-      const parsed = JSON.parse(raw);
-      state.character = parsed;
-      saveState(); renderAll(); alert('Imported character');
-    }catch(e){ alert('Invalid JSON: '+e.message); }
-  });
-
-  // Basic combat wiring (minimal to avoid errors)
-  document.getElementById('attackRollBtn').addEventListener('click', ()=>{
-    const r = rollExpression('1d100');
-    const dmg = parseInt(document.getElementById('baseDamage').value,10) || 0;
-    const entry = `Attack roll ${r.total} (1d100) → base damage ${dmg}`;
-    document.getElementById('combatLog').innerHTML = `<div>${entry}</div>` + document.getElementById('combatLog').innerHTML;
-  });
-
-  // Attacker select populate
-  function populateAttackers(){
-    attackerSelect.innerHTML = '';
-    const opt = document.createElement('option'); opt.value='player'; opt.textContent = state.character.name || 'Player';
-    attackerSelect.appendChild(opt);
+// Show character list
+function showCharacterList() {
+  document.getElementById('characterListView').style.display = 'block';
+  document.getElementById('characterSheetView').style.display = 'none';
+  document.getElementById('characterCreationView').style.display = 'none';
+  
+  const charList = document.getElementById('charList');
+  charList.innerHTML = '';
+  
+  if (state.characters.length === 0) {
+    charList.innerHTML = '<div class="warning">No characters yet. Create one to get started!</div>';
+    return;
   }
+  
+  state.characters.forEach(char => {
+    const div = document.createElement('div');
+    div.className = 'char-item';
+    div.innerHTML = `
+      <div>
+        <h3>${char.name}</h3>
+        <small>XP: ${char.xpTotal - char.xpSpent} / ${char.xpTotal} remaining</small>
+      </div>
+      <div>
+        <button onclick="viewCharacterSheet('${char.id}')">View Sheet</button>
+        <button class="danger" onclick="deleteCharacter('${char.id}')">Delete</button>
+      </div>
+    `;
+    charList.appendChild(div);
+  });
+}
 
-  // Central render
-  function renderAll(){
-    ensureCharacter();
-    charName.value = state.character.name || '';
-    renderAttributes();
-    renderDerived();
-    renderSkills();
-    renderPurchaseLog();
+// View character sheet
+function viewCharacterSheet(charId) {
+  const char = state.characters.find(c => c.id === charId);
+  if (!char) return;
+  
+  state.currentChar = char;
+  
+  document.getElementById('characterListView').style.display = 'none';
+  document.getElementById('characterSheetView').style.display = 'block';
+  document.getElementById('characterCreationView').style.display = 'none';
+  
+  const sheetContent = document.getElementById('sheetContent');
+  sheetContent.innerHTML = `
+    <h2>${char.name}</h2>
+    <button onclick="editCharacter('${charId}')">✏️ Edit Character (Spend XP)</button>
+    
+    <h3>Attributes</h3>
+    <table>
+      <thead><tr><th>Attribute</th><th>Value</th><th>Bonus</th></tr></thead>
+      <tbody>
+        ${Object.keys(char.attrs).map(key => `
+          <tr>
+            <td>${key}</td>
+            <td>${char.attrs[key]}</td>
+            <td>${bonusFor(char.attrs[key]) >= 0 ? '+' : ''}${bonusFor(char.attrs[key])}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+    
+    <h3>Skills</h3>
+    <table>
+      <thead><tr><th>Skill</th><th>Rank</th><th>Bonus</th></tr></thead>
+      <tbody>
+        ${ALL_SKILLS.filter(s => char.skills[s] > 0).map(skill => `
+          <tr>
+            <td>${skill}</td>
+            <td>${char.skills[skill]}</td>
+            <td>+${skillBonus(char.skills[skill])}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+    
+    <h3>Languages</h3>
+    <div class="info-box">
+      ${char.languages.map(lang => `<div><strong>${lang}</strong> - Rank 4</div>`).join('')}
+    </div>
+    
+    <h3>Talents</h3>
+    <div class="talent-list">
+      ${char.talents.length === 0 ? '<div class="warning">No talents</div>' : 
+        char.talents.map(t => `<div class="talent-item"><strong>${t.name}</strong> - Tier ${t.tier}</div>`).join('')}
+    </div>
+    
+    <h3>XP Summary</h3>
+    <div class="stats-display">
+      <div class="stat-item"><strong>Total XP:</strong> ${char.xpTotal}</div>
+      <div class="stat-item"><strong>Spent XP:</strong> ${char.xpSpent}</div>
+      <div class="stat-item"><strong>Remaining XP:</strong> ${char.xpTotal - char.xpSpent}</div>
+    </div>
+  `;
+}
+
+// Delete character
+function editCharacter(charId) {
+  const char = state.characters.find(c => c.id === charId);
+  if (!char) return;
+  
+  // Set up editing mode - similar to Stage 3 but for existing character
+  state.creationChar = char;
+  state.creationStage = 3;
+  state.isEditingExisting = true;
+  
+  document.getElementById('characterListView').style.display = 'none';
+  document.getElementById('characterSheetView').style.display = 'none';
+  document.getElementById('characterCreationView').style.display = 'block';
+  
+  // Show only Stage 3
+  document.getElementById('creationStage1').style.display = 'none';
+  document.getElementById('creationStage2').style.display = 'none';
+  document.getElementById('creationStage3').style.display = 'block';
+  
+  // Update stage indicators
+  document.getElementById('stage1Indicator').classList.add('completed');
+  document.getElementById('stage2Indicator').classList.add('completed');
+  document.getElementById('stage3Indicator').classList.add('active');
+  
+  renderCreationStage3();
+}
+
+function finishEditingCharacter() {
+  state.creationChar = null;
+  state.creationStage = 1;
+  state.isEditingExisting = false;
+  saveState();
+  showCharacterList();
+  showAlert('Character updated successfully!');
+}
+
+async function deleteCharacter(charId) {
+  const char = state.characters.find(c => c.id === charId);
+  if (!char) return;
+  
+  const confirmed = await showConfirm(`Delete character "${char.name}"? This cannot be undone.`);
+  if (!confirmed) return;
+  
+  state.characters = state.characters.filter(c => c.id !== charId);
+  saveState();
+  showCharacterList();
+}
+
+// ==================== DICE ROLLER ====================
+function rollDice() {
+  const expr = document.getElementById('diceExpr').value.trim();
+  const count = parseInt(document.getElementById('diceCount').value) || 1;
+  const resultDiv = document.getElementById('diceResult');
+  
+  try {
+    const results = [];
+    for (let i = 0; i < count; i++) {
+      const result = rollExpression(expr);
+      results.push(result);
+      state.diceHistory.push({ ...result, expr, when: Date.now() });
+    }
+    
+    const last = results[results.length - 1];
+    resultDiv.innerHTML = `
+      <div class="success">
+        <strong>Result:</strong> ${last.total} 
+        [Rolls: ${last.rolls.join(', ')}${last.mod ? (last.mod > 0 ? ' +' + last.mod : ' ' + last.mod) : ''}]
+      </div>
+    `;
+    
+    saveState();
     renderDiceHistory();
-    populateAttackers();
-    updateUnspentXP();
+  } catch (e) {
+    resultDiv.innerHTML = `<div class="error">Error: ${e.message}</div>`;
   }
+}
 
-  // wire simple name change
-  charName.addEventListener('change', ()=>{ state.character.name = charName.value; saveState(); renderAll(); });
+function renderDiceHistory() {
+  const historyDiv = document.getElementById('diceHistory');
+  const recentHistory = state.diceHistory.slice().reverse().slice(0, 20);
+  
+  historyDiv.innerHTML = `
+    <div class="collapsible-header collapsed" id="diceHistoryHeader" onclick="toggleCollapsible('diceHistory')">
+      <strong>Dice History (${state.diceHistory.length} rolls)</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="collapsible-content collapsed" id="diceHistoryContent">
+      <div style="max-height: 300px; overflow-y: auto; padding: 10px; border: 1px solid #444; background: #1a1a1a; border-radius: 4px; margin-top: 10px;">
+        ${recentHistory.length === 0 ? '<div class="warning">No dice rolls yet.</div>' :
+          recentHistory.map(entry => `
+            <div style="padding: 5px 0; border-bottom: 1px solid #444;">
+              <strong>${entry.expr}</strong> → ${entry.rolls.join(', ')} = <strong>${entry.total}</strong>
+              <small style="color: #999; display: block;">(${new Date(entry.when).toLocaleTimeString()})</small>
+            </div>
+          `).join('')}
+      </div>
+    </div>
+  `;
+}
 
-  // initial render
-  renderAll();
+function clearDiceHistory() {
+  state.diceHistory = [];
+  saveState();
+  renderDiceHistory();
+}
 
-  // end IIFE
-})();
- </script>
- </body>
- </html>
+// ==================== PERSISTENCE ====================
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (e) {
+    console.error('Save failed:', e);
+  }
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      state = JSON.parse(raw);
+    }
+  } catch (e) {
+    console.error('Load failed:', e);
+  }
+}
+
+function exportAllCharacters() {
+  const json = JSON.stringify(state.characters, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'gpsg_characters.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importCharacters() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'application/json';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = event => {
+      try {
+        const imported = JSON.parse(event.target.result);
+        if (Array.isArray(imported)) {
+          state.characters = imported;
+          saveState();
+          showCharacterList();
+          showAlert('Characters imported successfully!');
+        } else {
+          showAlert('Invalid file format.');
+        }
+      } catch (err) {
+        showAlert('Error importing: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+// ==================== TAB SWITCHING ====================
+function switchTab(tabName) {
+  const tabs = document.querySelectorAll('.tab-content');
+  tabs.forEach(tab => tab.classList.remove('active'));
+  
+  const buttons = document.querySelectorAll('.tab-btn');
+  buttons.forEach(btn => btn.classList.remove('active'));
+  
+  document.getElementById(tabName).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ==================== INITIALIZATION ====================
+loadState();
+renderDiceHistory();
+showCharacterList();
+</script>
+
+</body>
+</html>
