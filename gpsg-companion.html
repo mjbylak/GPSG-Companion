@@ -675,17 +675,23 @@ let state = {
 };
 
 const SKILLS = [
-  'Athletics', 'Stealth', 'Handgun', 'Rifle', 'Melee', 'Repair', 
-  'First Aid', 'Persuasion', 'Intimidation', 'Trade', 'Pilot', 'Survival',
-  'Lockpicking', 'Sleight of Hand', 'Acrobatics', 'Investigation'
+  'Athletics', 'Stealth', 'Melee', 'Repair', 
+  'First Aid', 'Persuasion', 'Intimidation',  'Survival',
+  'Lockpicking', 'Sleight of Hand', 'Acrobatics', 'Investigation', 'Trade', 'Weapon', 'Vehicle'
 ];
 
 const KNOWLEDGE_SKILLS = [
-  'History', 'Science', 'Arcana', 
-  'Politics', 'Religion', 'Nature'
+  'Knowledge'
 ];
 
+const SPECIALTY_SKILLS = ['Trade', 'Vehicle', 'Weapon', ...KNOWLEDGE_SKILLS];
+
 const ALL_SKILLS = [...SKILLS, ...KNOWLEDGE_SKILLS];
+
+// Check if a skill requires a specialty/niche
+function needsSpecialty(skillName) {
+  return SPECIALTY_SKILLS.includes(skillName);
+}
 
 // ==================== UTILITY FUNCTIONS ====================
 function randomInt(min, max) {
@@ -960,6 +966,7 @@ function addXPSkill() {
     name: '',
     rank: 0,
     isCustom: false,
+    specialty: '',  // For skills that need specialization
     xpSpentOnRanks: [100]  // Track XP spent on each rank
   });
   
@@ -1072,6 +1079,17 @@ function setXPSkillToCustom(skillId) {
     skill.isCustom = true;
     skill.name = '';
   }
+  renderCreationStage3();
+}
+
+function setXPSkillSpecialty(skillId, specialty) {
+  const char = state.creationChar;
+  if (!char.xpSkillsList) return;
+  const skill = char.xpSkillsList.find(s => s.id === skillId);
+  if (skill) {
+    skill.specialty = specialty;
+  }
+  saveState();
   renderCreationStage3();
 }
 
@@ -1349,7 +1367,8 @@ function addFreeSkill() {
     id: skillId,
     name: '',  // Empty until selected
     rank: null,  // No rank selected initially
-    isCustom: false  // Start with dropdown
+    isCustom: false,  // Start with dropdown
+    specialty: ''  // For Trade, Pilot, etc.
   });
   renderCreationStage2();
 }
@@ -1368,7 +1387,8 @@ function addKnowledgeSkill() {
     id: skillId,
     name: '',  // Empty until selected
     rank: 0,  // Knowledge skills default to rank 0
-    isCustom: false  // Start with dropdown
+    isCustom: false,  // Start with dropdown
+    specialty: ''  // Knowledge specialty (e.g., "Botany" for "Knowledge")
   });
   
   // Increment counter immediately
@@ -1479,6 +1499,16 @@ function setSkillToCustom(skillId, listType) {
   if (skill) {
     skill.isCustom = true;
     skill.name = '';  // Empty so user can type their custom skill
+  }
+  renderCreationStage2();
+}
+
+function setSkillSpecialty(skillId, specialty, listType) {
+  const char = state.creationChar;
+  const list = listType === 'knowledge' ? char.knowledgeSkillsList : char.freeSkillsList;
+  const skill = list.find(s => s.id === skillId);
+  if (skill) {
+    skill.specialty = specialty;
   }
   renderCreationStage2();
 }
@@ -1620,23 +1650,39 @@ async function finishCharacterCreation() {
   
   // Apply free skills to character's skills object
   char.freeSkillsList.forEach(skill => {
-    if (skill.rank !== null && skill.name && skill.name !== 'Custom' && skill.name !== '') {
-      // Check if this skill was upgraded with XP
-      const finalRank = char.skillUpgrades && char.skillUpgrades[skill.name] 
-        ? char.skillUpgrades[skill.name].rank 
-        : skill.rank;
-      char.skills[skill.name] = Math.max(char.skills[skill.name] || 0, finalRank);
+    if (skill.name && skill.name !== 'Custom' && skill.name !== '') {
+      // For specialty skills, use rank 0 if no rank selected but they have a specialty
+      let rankToApply = skill.rank;
+      if (rankToApply === null && needsSpecialty(skill.name) && skill.specialty) {
+        rankToApply = 0;
+      }
+      
+      if (rankToApply !== null) {
+        // Check if this skill was upgraded with XP
+        const finalRank = char.skillUpgrades && char.skillUpgrades[skill.name] 
+          ? char.skillUpgrades[skill.name].rank 
+          : rankToApply;
+        char.skills[skill.name] = Math.max(char.skills[skill.name] || 0, finalRank);
+      }
     }
   });
   
   // Apply knowledge skills
   char.knowledgeSkillsList.forEach(skill => {
-    if (skill.rank !== null && skill.name && skill.name !== 'Custom' && skill.name !== '') {
-      // Check if this skill was upgraded with XP
-      const finalRank = char.skillUpgrades && char.skillUpgrades[skill.name] 
-        ? char.skillUpgrades[skill.name].rank 
-        : skill.rank;
-      char.skills[skill.name] = Math.max(char.skills[skill.name] || 0, finalRank);
+    if (skill.name && skill.name !== 'Custom' && skill.name !== '') {
+      // For knowledge skills, use rank 0 if no rank selected but they have a specialty
+      let rankToApply = skill.rank;
+      if (rankToApply === null && skill.specialty) {
+        rankToApply = 0;
+      }
+      
+      if (rankToApply !== null) {
+        // Check if this skill was upgraded with XP
+        const finalRank = char.skillUpgrades && char.skillUpgrades[skill.name] 
+          ? char.skillUpgrades[skill.name].rank 
+          : rankToApply;
+        char.skills[skill.name] = Math.max(char.skills[skill.name] || 0, finalRank);
+      }
     }
   });
   
@@ -1727,9 +1773,22 @@ function renderCreationStage2() {
       `;
     }
     
+    // Build specialty input if skill requires it
+    let specialtyHTML = '';
+    if (skill.name && needsSpecialty(skill.name)) {
+      let placeholder = 'e.g., Botany';
+      if (skill.name === 'Trade') placeholder = 'e.g., Welding';
+      else if (skill.name === 'Vehicle') placeholder = 'e.g., Helicopter';
+      else if (skill.name === 'Weapon') placeholder = 'e.g., Handgun';
+      
+      specialtyHTML = `<input type="text" placeholder="${placeholder}" value="${skill.specialty || ''}" 
+        onchange="setSkillSpecialty('${skill.id}', this.value, 'free')" style="margin-top: 5px;" />`;
+    }
+    
     div.innerHTML = `
       <div>
         ${nameHTML}
+        ${specialtyHTML}
       </div>
       <div class="rank-buttons">
         <button class="${skill.rank === 0 ? 'active' : ''}" onclick="setFreeSkillRank('${skill.id}', 0)" ${skill.fromTrade ? 'disabled' : ''}>Rank 0</button>
@@ -1765,9 +1824,17 @@ function renderCreationStage2() {
       `;
     }
     
+    // Build specialty input for knowledge skills
+    let specialtyHTML = '';
+    if (skill.name && needsSpecialty(skill.name)) {
+      specialtyHTML = `<input type="text" placeholder="e.g., Botany" value="${skill.specialty || ''}" 
+        onchange="setSkillSpecialty('${skill.id}', this.value, 'knowledge')" style="margin-top: 5px;" />`;
+    }
+    
     div.innerHTML = `
       <div>
         ${nameHTML}
+        ${specialtyHTML}
       </div>
       <div class="rank-buttons">
         <button class="${skill.rank === 0 ? 'active' : ''}" onclick="setKnowledgeSkillRank('${skill.id}', 0)">Rank 0</button>
@@ -1877,6 +1944,7 @@ function renderCreationStage3() {
     if (skill.name && skill.rank !== null) {
       allSkills.set(skill.name, {
         name: skill.name,
+        specialty: skill.specialty || '',
         minRank: skill.rank,
         currentRank: skill.rank,
         xpSpent: [],
@@ -1889,6 +1957,7 @@ function renderCreationStage3() {
     if (skill.name && skill.rank !== null) {
       allSkills.set(skill.name, {
         name: skill.name,
+        specialty: skill.specialty || '',
         minRank: skill.rank,
         currentRank: skill.rank,
         xpSpent: [],
@@ -1922,10 +1991,11 @@ function renderCreationStage3() {
       
       const nextRankCost = 50 * (skillData.currentRank + 1);
       const canDecrease = skillData.currentRank > skillData.minRank;
+      const displayName = skillData.specialty ? `${skillData.name}: ${skillData.specialty}` : skillData.name;
       
       div.innerHTML = `
         <div>
-          <strong>${skillData.name}</strong>
+          <strong>${displayName}</strong>
           <br><small>Rank ${skillData.currentRank} ${skillData.minRank > 0 ? `(min: ${skillData.minRank})` : ''}</small>
         </div>
         <div class="rank-buttons">
@@ -1969,11 +2039,24 @@ function renderCreationStage3() {
         `;
       }
       
+      // Build specialty input if skill requires it
+      let specialtyHTML = '';
+      if (skill.name && needsSpecialty(skill.name)) {
+        let placeholder = 'e.g., Botany';
+        if (skill.name === 'Trade') placeholder = 'e.g., Welding';
+        else if (skill.name === 'Vehicle') placeholder = 'e.g., Helicopter';
+        else if (skill.name === 'Weapon') placeholder = 'e.g., Handgun';
+        
+        specialtyHTML = `<input type="text" placeholder="${placeholder}" value="${skill.specialty || ''}" 
+          onchange="setXPSkillSpecialty('${skill.id}', this.value)" style="margin-top: 5px;" />`;
+      }
+      
       const nextRankCost = 50 * (skill.rank + 1);
       
       div.innerHTML = `
         <div>
           ${nameHTML}
+          ${specialtyHTML}
           <small>Rank ${skill.rank}</small>
         </div>
         <div class="rank-buttons">
@@ -2099,13 +2182,26 @@ function viewCharacterSheet(charId) {
     <table>
       <thead><tr><th>Skill</th><th>Rank</th><th>Bonus</th></tr></thead>
       <tbody>
-        ${ALL_SKILLS.filter(s => char.skills[s] > 0).map(skill => `
-          <tr>
-            <td>${skill}</td>
-            <td>${char.skills[skill]}</td>
-            <td>+${skillBonus(char.skills[skill])}</td>
-          </tr>
-        `).join('')}
+        ${ALL_SKILLS.filter(s => char.skills[s] > 0).map(skill => {
+          // Check if this skill has a specialty from knowledge, free, or XP skills
+          let skillSpecialty = '';
+          const knowledgeSkill = char.knowledgeSkillsList?.find(s => s.name === skill);
+          const freeSkill = char.freeSkillsList?.find(s => s.name === skill);
+          const xpSkill = char.xpSkillsList?.find(s => s.name === skill);
+          
+          if (knowledgeSkill && knowledgeSkill.specialty) skillSpecialty = knowledgeSkill.specialty;
+          else if (freeSkill && freeSkill.specialty) skillSpecialty = freeSkill.specialty;
+          else if (xpSkill && xpSkill.specialty) skillSpecialty = xpSkill.specialty;
+          
+          const displayName = skillSpecialty ? `${skill}: ${skillSpecialty}` : skill;
+          return `
+            <tr>
+              <td>${displayName}</td>
+              <td>${char.skills[skill]}</td>
+              <td>+${skillBonus(char.skills[skill])}</td>
+            </tr>
+          `;
+        }).join('')}
       </tbody>
     </table>
     
